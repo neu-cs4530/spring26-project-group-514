@@ -9,6 +9,7 @@ import { type NewMessagePayload } from "./message.types.ts";
 import { type WithAuth } from "./auth.types.ts";
 import { type GameMakeMovePayload, type GamePlayInfo, type TaggedGameView } from "./game.types.ts";
 import { type SafeUserInfo } from "./user.types.ts";
+import { type LobbyInfo } from "./lobby.types.ts";
 
 /**
  * The Socket.io interface for client to server communication
@@ -21,6 +22,7 @@ export interface ClientToServerEvents {
   gameMakeMove: (payload: WithAuth<GameMakeMovePayload>) => void;
   gameStart: (payload: WithAuth<string>) => void;
   gameWatch: (payload: WithAuth<string>) => void;
+  lobbyJoin: (payload: WithAuth<string>) => void;
 }
 
 /**
@@ -35,4 +37,5 @@ export interface ServerToClientEvents {
   gamePlayersUpdated: (payload: SafeUserInfo[]) => void;
   gameStateUpdated: (payload: TaggedGameView & { forPlayer: boolean }) => void;
   gameWatched: (payload: GamePlayInfo) => void;
+  lobbyUpdated: (payload: LobbyInfo) => void;
 }

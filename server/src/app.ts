@@ -62,6 +62,7 @@ app.use(
     )
 );
 
+lobby.setIo(io);
 io.on("connection", (socket) => {
   const socketId = socket.id;
   console.log(`CONN [${socketId}] connected`);
@@ -78,6 +79,7 @@ io.on("connection", (socket) => {
   socket.on("gameMakeMove", game.socketMakeMove(socket, io));
   socket.on("gameStart", game.socketStart(socket, io));
   socket.on("gameWatch", game.socketWatch(socket, io));
+  socket.on("lobbyJoin", lobby.socketJoinLobby(socket, io));
 
   socket.onAny((name, payload) => {
     const zPayload = z.object({ auth: z.object({ username: z.string() }), payload: z.any() });

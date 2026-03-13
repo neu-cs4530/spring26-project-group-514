@@ -1,5 +1,5 @@
 import { withAuth, zCreateLobbyPayload, zInvitePlayerPayload, zRemovePlayerPayload, zJoinLobbyByCodePayload, type LobbyInfo } from "@gamenite/shared";
-import { type RestAPI } from "../types.ts";
+import { type RestAPI, type SocketAPI, type GameServer } from "../types.ts";
 import { checkAuth } from "../services/auth.service.ts";
 import {
   createLobby,
@@ -14,6 +14,17 @@ import {
 } from "../services/lobby.service.ts";
 import { createGame } from "../services/game.service.ts";
 import { z } from "zod";
+
+let _io: GameServer | null = null;
+export function setIo(io: GameServer) {
+  _io = io;
+}
+
+async function broadcastLobbyUpdate(lobbyId: string) {
+  if (!_io) return;
+  const lobby = await getLobbyById(lobbyId);
+  if (lobby) _io.to(lobbyId).emit("lobbyUpdated", lobby);
+}
 
 /** POST /api/lobby/create */
 export const postCreate: RestAPI<LobbyInfo> = async (req, res) => {
@@ -59,6 +70,7 @@ export const postJoin: RestAPI<LobbyInfo, { id: string }> = async (req, res) => 
   if (!user) { res.status(403).send({ error: "Invalid credentials" }); return; }
   try {
     const lobby = await joinLobby(req.params.id, user);
+    await broadcastLobbyUpdate(req.params.id);
     res.send(lobby);
   } catch (err) {
     res.status(400).send({ error: (err as Error).message });
@@ -73,6 +85,7 @@ export const postJoinByCode: RestAPI<LobbyInfo> = async (req, res) => {
   if (!user) { res.status(403).send({ error: "Invalid credentials" }); return; }
   try {
     const lobby = await joinLobbyByCode(body.data.payload.code, user);
+    await broadcastLobbyUpdate(lobby.lobbyId);
     res.send(lobby);
   } catch (err) {
     res.status(400).send({ error: (err as Error).message });
@@ -87,6 +100,7 @@ export const postLeave: RestAPI<LobbyInfo, { id: string }> = async (req, res) =>
   if (!user) { res.status(403).send({ error: "Invalid credentials" }); return; }
   try {
     const lobby = await leaveLobby(req.params.id, user);
+    await broadcastLobbyUpdate(req.params.id);
     res.send(lobby);
   } catch (err) {
     res.status(400).send({ error: (err as Error).message });
@@ -101,6 +115,7 @@ export const postRemove: RestAPI<LobbyInfo, { id: string }> = async (req, res) =
   if (!user) { res.status(403).send({ error: "Invalid credentials" }); return; }
   try {
     const lobby = await removePlayer(req.params.id, user, body.data.payload.username);
+    await broadcastLobbyUpdate(req.params.id);
     res.send(lobby);
   } catch (err) {
     res.status(400).send({ error: (err as Error).message });
@@ -120,5 +135,19 @@ export const postStart: RestAPI<{ gameId: string }, { id: string }> = async (req
     res.send({ gameId: game.gameId });
   } catch (err) {
     res.status(400).send({ error: (err as Error).message });
+  }
+};
+
+/** Socket: join a lobby room to receive real-time updates */
+export const socketJoinLobby: SocketAPI = (socket, io) => async (body) => {
+  try {
+    const { auth, payload: lobbyId } = withAuth(z.string()).parse(body);
+    const user = await checkAuth(auth);
+    if (!user) return;
+    await socket.join(lobbyId);
+    const lobby = await getLobbyById(lobbyId);
+    if (lobby) socket.emit("lobbyUpdated", lobby);
+  } catch (err) {
+    console.error(err);
   }
 };
