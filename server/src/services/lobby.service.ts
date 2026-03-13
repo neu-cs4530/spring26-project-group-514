@@ -74,7 +74,7 @@ export async function getPublicLobbies(): Promise<LobbyInfo[]> {
   const keys = await LobbyRepo.getAllKeys();
   const all = await Promise.all(keys.map(populateLobbyInfo));
   return all
-    .filter(lobby => !lobby.isPrivate)
+    .filter((lobby) => !lobby.isPrivate)
     .toSorted((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 }
 
@@ -88,8 +88,7 @@ export async function invitePlayer(
 ): Promise<LobbyInfo> {
   const lobby = await LobbyRepo.find(lobbyId);
   if (!lobby) throw new Error(`Lobby ${lobbyId} not found`);
-  if (lobby.createdBy !== inviter.userId)
-    throw new Error(`Only the host can invite players`);
+  if (lobby.createdBy !== inviter.userId) throw new Error(`Only the host can invite players`);
 
   // Find the target user
   const { UserRepo } = await import("../repository.ts");
@@ -104,7 +103,7 @@ export async function invitePlayer(
   }
   if (!targetUserId) throw new Error(`User ${targetUsername} not found`);
 
-  const alreadyInLobby = lobby.players.some(p => p.userId === targetUserId);
+  const alreadyInLobby = lobby.players.some((p) => p.userId === targetUserId);
   if (alreadyInLobby) throw new Error(`User ${targetUsername} is already in this lobby`);
 
   lobby.players = [...lobby.players, { userId: targetUserId, status: "pending" }];
@@ -115,14 +114,11 @@ export async function invitePlayer(
 /**
  * Join a lobby by lobby ID (accepting an invite) or by code.
  */
-export async function joinLobby(
-  lobbyId: string,
-  user: UserWithId,
-): Promise<LobbyInfo> {
+export async function joinLobby(lobbyId: string, user: UserWithId): Promise<LobbyInfo> {
   const lobby = await LobbyRepo.find(lobbyId);
   if (!lobby) throw new Error(`Lobby ${lobbyId} not found`);
 
-  const playerEntry = lobby.players.find(p => p.userId === user.userId);
+  const playerEntry = lobby.players.find((p) => p.userId === user.userId);
   if (playerEntry) {
     // Already invited — update status to joined
     playerEntry.status = "joined";
@@ -139,10 +135,7 @@ export async function joinLobby(
 /**
  * Join a lobby by its unique code.
  */
-export async function joinLobbyByCode(
-  code: string,
-  user: UserWithId,
-): Promise<LobbyInfo> {
+export async function joinLobbyByCode(code: string, user: UserWithId): Promise<LobbyInfo> {
   const keys = await LobbyRepo.getAllKeys();
   for (const key of keys) {
     const lobby = await LobbyRepo.get(key);
@@ -154,15 +147,12 @@ export async function joinLobbyByCode(
 /**
  * Leave a lobby.
  */
-export async function leaveLobby(
-  lobbyId: string,
-  user: UserWithId,
-): Promise<LobbyInfo> {
+export async function leaveLobby(lobbyId: string, user: UserWithId): Promise<LobbyInfo> {
   const lobby = await LobbyRepo.find(lobbyId);
   if (!lobby) throw new Error(`Lobby ${lobbyId} not found`);
   if (lobby.createdBy === user.userId) throw new Error(`Host cannot leave their own lobby`);
 
-  lobby.players = lobby.players.filter(p => p.userId !== user.userId);
+  lobby.players = lobby.players.filter((p) => p.userId !== user.userId);
   await LobbyRepo.set(lobbyId, lobby);
   return populateLobbyInfo(lobbyId);
 }
@@ -192,7 +182,7 @@ export async function removePlayer(
   if (!targetUserId) throw new Error(`User ${targetUsername} not found`);
   if (targetUserId === lobby.createdBy) throw new Error(`Cannot remove the host`);
 
-  lobby.players = lobby.players.filter(p => p.userId !== targetUserId);
+  lobby.players = lobby.players.filter((p) => p.userId !== targetUserId);
   await LobbyRepo.set(lobbyId, lobby);
   return populateLobbyInfo(lobbyId);
 }
@@ -209,11 +199,11 @@ export async function startLobby(
   if (!lobby) throw new Error(`Lobby ${lobbyId} not found`);
   if (lobby.createdBy !== host.userId) throw new Error(`Only the host can start the game`);
 
-  const joinedPlayers = lobby.players.filter(p => p.status === "joined");
+  const joinedPlayers = lobby.players.filter((p) => p.status === "joined");
   if (joinedPlayers.length < 2) throw new Error(`Not enough players to start`);
 
   return {
     type: lobby.type,
-    playerIds: joinedPlayers.map(p => p.userId),
+    playerIds: joinedPlayers.map((p) => p.userId),
   };
 }
