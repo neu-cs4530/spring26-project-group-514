@@ -37,6 +37,22 @@ export interface GamePlayInfo {
   players: SafeUserInfo[];
 }
 
+/**
+ * Represents the in-game score for one player in the current game state.
+ */
+export interface GamePlayerScore {
+  playerIndex: number;
+  score: number;
+}
+
+/**
+ * Broadcast payload for current in-game scores.
+ */
+export interface GameScoresPayload {
+  gameId: string;
+  scores: GamePlayerScore[];
+}
+
 /*** TYPES USED IN THE GAMES API ***/
 
 export type GameMakeMovePayload = z.infer<typeof zGameMakeMovePayload>;
