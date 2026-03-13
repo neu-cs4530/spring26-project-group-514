@@ -91,11 +91,11 @@ export async function invitePlayer(
   if (lobby.createdBy !== inviter.userId) throw new Error(`Only the host can invite players`);
 
   // Find the target user
-  const { UserRepo } = await import("../repository.ts");
-  const allUserKeys = await UserRepo.getAllKeys();
+  const { UserRepo: userRepo } = await import("../repository.ts");
+  const allUserKeys = await userRepo.getAllKeys();
   let targetUserId: string | undefined;
   for (const key of allUserKeys) {
-    const u = await UserRepo.get(key);
+    const u = await userRepo.get(key);
     if (u.username === targetUsername) {
       targetUserId = key;
       break;
@@ -169,11 +169,11 @@ export async function removePlayer(
   if (!lobby) throw new Error(`Lobby ${lobbyId} not found`);
   if (lobby.createdBy !== host.userId) throw new Error(`Only the host can remove players`);
 
-  const { UserRepo } = await import("../repository.ts");
-  const allUserKeys = await UserRepo.getAllKeys();
+  const { UserRepo: userRepo } = await import("../repository.ts");
+  const allUserKeys = await userRepo.getAllKeys();
   let targetUserId: string | undefined;
   for (const key of allUserKeys) {
-    const u = await UserRepo.get(key);
+    const u = await userRepo.get(key);
     if (u.username === targetUsername) {
       targetUserId = key;
       break;

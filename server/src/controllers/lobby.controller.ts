@@ -171,7 +171,7 @@ export const postStart: RestAPI<{ gameId: string }, { id: string }> = async (req
     return;
   }
   try {
-    const { type, playerIds } = await startLobby(req.params.id, user);
+    const { type } = await startLobby(req.params.id, user);
     // Create the actual game, starting with the host
     const game = await createGame(user, type, new Date());
     res.send({ gameId: game.gameId });
