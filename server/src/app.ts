@@ -59,7 +59,7 @@ app.use(
         .post("/:id/leave", lobby.postLeave)
         .post("/:id/remove", lobby.postRemove)
         .post("/:id/start", lobby.postStart),
-    )
+    ),
 );
 
 lobby.setIo(io);
