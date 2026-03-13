@@ -7,7 +7,12 @@ import {
 } from "./chat.types.ts";
 import { type NewMessagePayload } from "./message.types.ts";
 import { type WithAuth } from "./auth.types.ts";
-import { type GameMakeMovePayload, type GamePlayInfo, type TaggedGameView } from "./game.types.ts";
+import {
+  type GameMakeMovePayload,
+  type GamePlayInfo,
+  type GameScoresPayload,
+  type TaggedGameView,
+} from "./game.types.ts";
 import { type SafeUserInfo } from "./user.types.ts";
 
 /**
@@ -33,6 +38,7 @@ export interface ServerToClientEvents {
   chatUserJoined: (payload: ChatUserJoinedPayload) => void;
   chatUserLeft: (payload: ChatUserLeftPayload) => void;
   gamePlayersUpdated: (payload: SafeUserInfo[]) => void;
+  gameScoresUpdated: (payload: GameScoresPayload) => void;
   gameStateUpdated: (payload: TaggedGameView & { forPlayer: boolean }) => void;
   gameWatched: (payload: GamePlayInfo) => void;
 }
