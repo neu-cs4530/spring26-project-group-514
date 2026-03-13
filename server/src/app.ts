@@ -8,6 +8,7 @@ import * as chat from "./controllers/chat.controller.ts";
 import * as game from "./controllers/game.controller.ts";
 import * as user from "./controllers/user.controller.ts";
 import * as thread from "./controllers/thread.controller.ts";
+import * as lobby from "./controllers/lobby.controller.ts";
 import { type GameServer } from "./types.ts";
 
 export const app = express();
@@ -44,6 +45,20 @@ app.use(
         .post("/signup", user.postSignup)
         .post("/:username", user.postByUsername)
         .get("/:username", user.getByUsername),
+    )
+    .use(
+      "/lobby",
+      express
+        .Router()
+        .post("/create", lobby.postCreate)
+        .post("/join-by-code", lobby.postJoinByCode)
+        .get("/list", lobby.getList)
+        .get("/:id", lobby.getById)
+        .post("/:id/invite", lobby.postInvite)
+        .post("/:id/join", lobby.postJoin)
+        .post("/:id/leave", lobby.postLeave)
+        .post("/:id/remove", lobby.postRemove)
+        .post("/:id/start", lobby.postStart),
     ),
 );
 

@@ -81,6 +81,13 @@ export interface GameRecord {
   createdBy: RecordId; // References User records
 }
 
+export interface GameHistoryRecord {
+  type: GameKey;
+  state: unknown;
+  players: RecordId[]; // References User records
+  endedAt: DateISO;
+}
+
 /**
  * Represents a message in the database.
  * - `text`: message contents
@@ -146,5 +153,23 @@ export interface FriendRequestRecord {
 export interface DirectChatRecord {
   participants: [RecordId, RecordId]; // Two User IDs
   messages: RecordId[]; // References Message records
+  createdAt: DateISO;
+}
+
+/**
+ * Represents a lobby document in the database.
+ * - `type`: which game this lobby is for
+ * - `isPrivate`: whether the lobby is hidden from public list
+ * - `code`: unique join code for sharing
+ * - `createdBy`: user id of the lobby host
+ * - `players`: list of players and their invite statuses
+ * - `createdAt`: when the lobby was created
+ */
+export interface LobbyRecord {
+  type: GameKey;
+  isPrivate: boolean;
+  code: string;
+  createdBy: RecordId;
+  players: { userId: RecordId; status: "pending" | "joined" | "declined" }[];
   createdAt: DateISO;
 }
