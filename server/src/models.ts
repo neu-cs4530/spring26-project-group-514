@@ -81,6 +81,13 @@ export interface GameRecord {
   createdBy: RecordId; // References User records
 }
 
+export interface GameHistoryRecord {
+  type: GameKey;
+  state: unknown;
+  players: RecordId[]; // References User records
+  endedAt: DateISO;
+}
+
 /**
  * Represents a message in the database.
  * - `text`: message contents
