@@ -9,6 +9,7 @@ import * as game from "./controllers/game.controller.ts";
 import * as user from "./controllers/user.controller.ts";
 import * as thread from "./controllers/thread.controller.ts";
 import * as lobby from "./controllers/lobby.controller.ts";
+import * as friend from "./controllers/friend.controller.ts";
 import { type GameServer } from "./types.ts";
 
 export const app = express();
@@ -59,7 +60,8 @@ app.use(
         .post("/:id/leave", lobby.postLeave)
         .post("/:id/remove", lobby.postRemove)
         .post("/:id/start", lobby.postStart),
-    ),
+    )
+    .use("/friend", express.Router().get("/list/:username", friend.getList)),
 );
 
 io.on("connection", (socket) => {
