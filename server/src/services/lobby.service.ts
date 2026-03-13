@@ -1,0 +1,219 @@
+import { type LobbyInfo, type GameKey } from "@gamenite/shared";
+import { type UserWithId } from "../types.ts";
+import { LobbyRepo } from "../repository.ts";
+import { populateSafeUserInfo } from "./user.service.ts";
+import { randomUUID } from "node:crypto";
+
+/**
+ * Expand a stored lobby record into a full LobbyInfo object.
+ */
+async function populateLobbyInfo(lobbyId: string): Promise<LobbyInfo> {
+  const lobby = await LobbyRepo.get(lobbyId);
+  return {
+    lobbyId,
+    type: lobby.type,
+    isPrivate: lobby.isPrivate,
+    code: lobby.code,
+    createdBy: await populateSafeUserInfo(lobby.createdBy),
+    createdAt: new Date(lobby.createdAt),
+    players: await Promise.all(
+      lobby.players.map(async ({ userId, status }) => ({
+        user: await populateSafeUserInfo(userId),
+        status,
+      })),
+    ),
+  };
+}
+
+/**
+ * Create a new lobby.
+ */
+export async function createLobby(
+  user: UserWithId,
+  type: GameKey,
+  isPrivate: boolean,
+  createdAt: Date,
+): Promise<LobbyInfo> {
+  const code = randomUUID().slice(0, 8).toUpperCase();
+  const lobbyId = await LobbyRepo.add({
+    type,
+    isPrivate,
+    code,
+    createdBy: user.userId,
+    createdAt: createdAt.toISOString(),
+    players: [{ userId: user.userId, status: "joined" }],
+  });
+  return populateLobbyInfo(lobbyId);
+}
+
+/**
+ * Get a lobby by its ID.
+ */
+export async function getLobbyById(lobbyId: string): Promise<LobbyInfo | null> {
+  const lobby = await LobbyRepo.find(lobbyId);
+  if (!lobby) return null;
+  return populateLobbyInfo(lobbyId);
+}
+
+/**
+ * Get a lobby by its join code.
+ */
+export async function getLobbyByCode(code: string): Promise<LobbyInfo | null> {
+  const keys = await LobbyRepo.getAllKeys();
+  for (const key of keys) {
+    const lobby = await LobbyRepo.get(key);
+    if (lobby.code === code) return populateLobbyInfo(key);
+  }
+  return null;
+}
+
+/**
+ * Get all public lobbies.
+ */
+export async function getPublicLobbies(): Promise<LobbyInfo[]> {
+  const keys = await LobbyRepo.getAllKeys();
+  const all = await Promise.all(keys.map(populateLobbyInfo));
+  return all
+    .filter(lobby => !lobby.isPrivate)
+    .toSorted((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+}
+
+/**
+ * Invite a player to a lobby by username.
+ */
+export async function invitePlayer(
+  lobbyId: string,
+  inviter: UserWithId,
+  targetUsername: string,
+): Promise<LobbyInfo> {
+  const lobby = await LobbyRepo.find(lobbyId);
+  if (!lobby) throw new Error(`Lobby ${lobbyId} not found`);
+  if (lobby.createdBy !== inviter.userId)
+    throw new Error(`Only the host can invite players`);
+
+  // Find the target user
+  const { UserRepo } = await import("../repository.ts");
+  const allUserKeys = await UserRepo.getAllKeys();
+  let targetUserId: string | undefined;
+  for (const key of allUserKeys) {
+    const u = await UserRepo.get(key);
+    if (u.username === targetUsername) {
+      targetUserId = key;
+      break;
+    }
+  }
+  if (!targetUserId) throw new Error(`User ${targetUsername} not found`);
+
+  const alreadyInLobby = lobby.players.some(p => p.userId === targetUserId);
+  if (alreadyInLobby) throw new Error(`User ${targetUsername} is already in this lobby`);
+
+  lobby.players = [...lobby.players, { userId: targetUserId, status: "pending" }];
+  await LobbyRepo.set(lobbyId, lobby);
+  return populateLobbyInfo(lobbyId);
+}
+
+/**
+ * Join a lobby by lobby ID (accepting an invite) or by code.
+ */
+export async function joinLobby(
+  lobbyId: string,
+  user: UserWithId,
+): Promise<LobbyInfo> {
+  const lobby = await LobbyRepo.find(lobbyId);
+  if (!lobby) throw new Error(`Lobby ${lobbyId} not found`);
+
+  const playerEntry = lobby.players.find(p => p.userId === user.userId);
+  if (playerEntry) {
+    // Already invited — update status to joined
+    playerEntry.status = "joined";
+  } else {
+    // Joining a public lobby directly
+    if (lobby.isPrivate) throw new Error(`Cannot join a private lobby without an invite`);
+    lobby.players = [...lobby.players, { userId: user.userId, status: "joined" }];
+  }
+
+  await LobbyRepo.set(lobbyId, lobby);
+  return populateLobbyInfo(lobbyId);
+}
+
+/**
+ * Join a lobby by its unique code.
+ */
+export async function joinLobbyByCode(
+  code: string,
+  user: UserWithId,
+): Promise<LobbyInfo> {
+  const keys = await LobbyRepo.getAllKeys();
+  for (const key of keys) {
+    const lobby = await LobbyRepo.get(key);
+    if (lobby.code === code) return joinLobby(key, user);
+  }
+  throw new Error(`No lobby found with code ${code}`);
+}
+
+/**
+ * Leave a lobby.
+ */
+export async function leaveLobby(
+  lobbyId: string,
+  user: UserWithId,
+): Promise<LobbyInfo> {
+  const lobby = await LobbyRepo.find(lobbyId);
+  if (!lobby) throw new Error(`Lobby ${lobbyId} not found`);
+  if (lobby.createdBy === user.userId) throw new Error(`Host cannot leave their own lobby`);
+
+  lobby.players = lobby.players.filter(p => p.userId !== user.userId);
+  await LobbyRepo.set(lobbyId, lobby);
+  return populateLobbyInfo(lobbyId);
+}
+
+/**
+ * Remove a player from a lobby (host only).
+ */
+export async function removePlayer(
+  lobbyId: string,
+  host: UserWithId,
+  targetUsername: string,
+): Promise<LobbyInfo> {
+  const lobby = await LobbyRepo.find(lobbyId);
+  if (!lobby) throw new Error(`Lobby ${lobbyId} not found`);
+  if (lobby.createdBy !== host.userId) throw new Error(`Only the host can remove players`);
+
+  const { UserRepo } = await import("../repository.ts");
+  const allUserKeys = await UserRepo.getAllKeys();
+  let targetUserId: string | undefined;
+  for (const key of allUserKeys) {
+    const u = await UserRepo.get(key);
+    if (u.username === targetUsername) {
+      targetUserId = key;
+      break;
+    }
+  }
+  if (!targetUserId) throw new Error(`User ${targetUsername} not found`);
+  if (targetUserId === lobby.createdBy) throw new Error(`Cannot remove the host`);
+
+  lobby.players = lobby.players.filter(p => p.userId !== targetUserId);
+  await LobbyRepo.set(lobbyId, lobby);
+  return populateLobbyInfo(lobbyId);
+}
+
+/**
+ * Start the game from a lobby (host only).
+ * Returns the lobbyId and gameType so the controller can create the game.
+ */
+export async function startLobby(
+  lobbyId: string,
+  host: UserWithId,
+): Promise<{ type: GameKey; playerIds: string[] }> {
+  const lobby = await LobbyRepo.find(lobbyId);
+  if (!lobby) throw new Error(`Lobby ${lobbyId} not found`);
+  if (lobby.createdBy !== host.userId) throw new Error(`Only the host can start the game`);
+
+  const joinedPlayers = lobby.players.filter(p => p.status === "joined");
+  if (joinedPlayers.length < 2) throw new Error(`Not enough players to start`);
+
+  return {
+    type: lobby.type,
+    playerIds: joinedPlayers.map(p => p.userId),
+  };
+}
