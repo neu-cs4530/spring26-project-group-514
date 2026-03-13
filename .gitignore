@@ -134,3 +134,7 @@ test-results/
 # misc
 client/build
 .DS_Store
+
+# Claude code
+.claude
+CLAUDE.md

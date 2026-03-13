@@ -120,3 +120,31 @@ export interface UserRecord {
   display: string;
   createdAt: DateISO;
 }
+
+/**
+ * Represents a friend request document in the database.
+ * - `fromUser`: the id reference to the user record of the user that sent the friend request.
+ * - `toUser`: the id reference to the user record of the user that recieved the friend request.
+ * - `status`: the status of the request.
+ * - `createdAt`: the time the request was sent.
+ * - `respondedAt`: the time the request was responded to.
+ */
+export interface FriendRequestRecord {
+  fromUser: RecordId; // References User
+  toUser: RecordId; // References User
+  status: "pending" | "accepted" | "rejected";
+  createdAt: DateISO;
+  respondedAt?: DateISO;
+}
+
+/**
+ * Represents a direct message document in the database.
+ * - `participations`: .
+ * - `messages`: .
+ * - `createdAt`: .
+ */
+export interface DirectChatRecord {
+  participants: [RecordId, RecordId]; // Two User IDs
+  messages: RecordId[]; // References Message records
+  createdAt: DateISO;
+}
