@@ -4,6 +4,7 @@ import {
   createGame,
   gameServices,
   getGameById,
+  getGameScores,
   getGames,
   joinGame,
   startGame,
@@ -85,6 +86,7 @@ export const socketWatch: SocketAPI = (socket) => async (body) => {
     const roomsToJoin = isPlayer ? [gameId, userRoom(gameId, user.userId)] : [gameId];
     await socket.join(roomsToJoin);
     socket.emit("gameWatched", { gameId, view, players });
+    socket.emit("gameScoresUpdated", await getGameScores(gameId));
   } catch (err) {
     logSocketError(socket, err);
   }
@@ -98,6 +100,10 @@ function sendViewUpdates(io: GameServer, gameId: string, updates: GameViewUpdate
   for (const { userId, view } of updates.players) {
     io.to(userRoom(gameId, userId)).emit("gameStateUpdated", { ...view, forPlayer: true });
   }
+}
+
+async function sendScoreUpdates(io: GameServer, gameId: string) {
+  io.to(gameId).emit("gameScoresUpdated", await getGameScores(gameId));
 }
 
 /**
@@ -122,6 +128,7 @@ export const socketJoinAsPlayer: SocketAPI = (socket, io) => async (body) => {
     // If the game is full, it starts automatically
     if (game.players.length === gameServices[game.type].maxPlayers) {
       sendViewUpdates(io, gameId, await startGame(gameId, user));
+      await sendScoreUpdates(io, gameId);
     }
   } catch (err) {
     logSocketError(socket, err);
@@ -136,6 +143,7 @@ export const socketStart: SocketAPI = (socket, io) => async (body) => {
     const { auth, payload: gameId } = withAuth(z.string()).parse(body);
     const user = await enforceAuth(auth);
     sendViewUpdates(io, gameId, await startGame(gameId, user));
+    await sendScoreUpdates(io, gameId);
   } catch (err) {
     logSocketError(socket, err);
   }
@@ -155,6 +163,7 @@ export const socketMakeMove: SocketAPI = (socket, io) => async (body) => {
     const user = await enforceAuth(auth);
     const { views, moveDescription, chatId } = await updateGame(gameId, user, move);
     sendViewUpdates(io, gameId, views);
+    await sendScoreUpdates(io, gameId);
 
     // Store the move description suffix and broadcast to the chat room
     const now = new Date();
