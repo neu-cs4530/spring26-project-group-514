@@ -61,7 +61,13 @@ app.use(
         .post("/:id/remove", lobby.postRemove)
         .post("/:id/start", lobby.postStart),
     )
-    .use("/friend", express.Router().get("/list/:username", friend.getList)),
+    .use(
+      "/friend",
+      express
+        .Router()
+        .get("/list/:username", friend.getList)
+        .get("/requests/:username", friend.getRequests),
+    ),
 );
 
 io.on("connection", (socket) => {

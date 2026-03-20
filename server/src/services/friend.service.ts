@@ -1,7 +1,8 @@
-import { type SafeUserInfo } from "@gamenite/shared";
+import { type SafeUserInfo, type FriendRequest } from "@gamenite/shared";
 import { getUserByUsername } from "./auth.service.ts";
 import { populateSafeUserInfo } from "./user.service.ts";
-import { UserRepo } from "../repository.ts";
+import { FriendRequestRepo, UserRepo } from "../repository.ts";
+import type { FriendRequestRecord } from "../models.ts";
 
 /**
  * Retrieves a friend list of a user
@@ -16,6 +17,48 @@ export async function getFriendsList(username: string): Promise<SafeUserInfo[]> 
   const userRecord = await UserRepo.get(user.userId);
 
   return Promise.all(userRecord.friends.map(populateSafeUserInfo));
+}
+
+/**
+ * Parse user's friend request information to be served to the client
+ *
+ * @param id the id of the record
+ * @param record the friend request record to parse
+ * @return friend request record to be served to the client
+ */
+export async function populateFriendRequest(
+  id: string,
+  record: FriendRequestRecord,
+): Promise<FriendRequest> {
+  const [fromUser, toUser] = await Promise.all([
+    UserRepo.get(record.fromUser),
+    UserRepo.get(record.toUser),
+  ]);
+  return {
+    id,
+    fromUser: fromUser.username,
+    toUser: toUser.username,
+    status: record.status,
+    createdAt: new Date(record.createdAt),
+    ...(record.respondedAt && { respondedAt: new Date(record.respondedAt) }),
+  };
+}
+
+/**
+ * Retrieves all pending requests from a user (both the reqeuest the get and receives)
+ *
+ * @param username user to get pending requests from
+ * @returns a list of pending requests
+ */
+export async function getPendingRequests(username: string): Promise<FriendRequest[]> {
+  const user = await getUserByUsername(username);
+  if (!user) throw new Error(`No user ${username}`);
+
+  const userRecord = await UserRepo.get(user.userId);
+  const requestIds = [...userRecord.friendInReqs, ...userRecord.friendOutReqs];
+  const records = await FriendRequestRepo.getMany(requestIds);
+
+  return Promise.all(records.map((record, i) => populateFriendRequest(requestIds[i], record)));
 }
 
 /**

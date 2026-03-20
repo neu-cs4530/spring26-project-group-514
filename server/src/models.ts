@@ -128,6 +128,8 @@ export interface UserRecord {
   display: string;
   createdAt: DateISO;
   friends: RecordId[]; // References User records
+  friendInReqs: RecordId[]; // References FriendRequest records
+  friendOutReqs: RecordId[]; // References FriendRequest records
 }
 
 /**
