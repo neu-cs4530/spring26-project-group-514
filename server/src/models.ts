@@ -121,11 +121,13 @@ export interface ThreadRecord {
  * - `password`: user's password
  * - `display`: A display name
  * - `createdAt`: when this user registered.
+ * - `friends`: user's friends id
  */
 export interface UserRecord {
   username: string; // References Auth records
   display: string;
   createdAt: DateISO;
+  friends: RecordId[]; // References User records
 }
 
 /**

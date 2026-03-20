@@ -40,6 +40,7 @@ export async function createUser(
     username,
     createdAt: createdAt.toISOString(),
     display: username,
+    friends: [],
   });
   await updateAuth(username, password, id);
   return Promise.resolve({
