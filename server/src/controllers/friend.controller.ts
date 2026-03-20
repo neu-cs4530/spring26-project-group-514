@@ -30,3 +30,12 @@ export const getRequests: RestAPI<FriendRequest[], { username: string }> = async
     res.status(404).send({ error: "User not found" });
   }
 };
+
+/**
+ * Handles sending friend request from one user to another
+ *
+ * @param req
+ * @param res
+ */
+
+export const postRequest: RestAPI<FriendRequest, { username: string }> = async (req, res) => {};
