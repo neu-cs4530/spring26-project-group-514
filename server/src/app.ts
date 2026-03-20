@@ -66,7 +66,8 @@ app.use(
       express
         .Router()
         .get("/list/:username", friend.getList)
-        .get("/requests/:username", friend.getRequests),
+        .get("/requests/:username", friend.getRequests)
+        .post("/request", friend.postRequest),
     ),
 );
 

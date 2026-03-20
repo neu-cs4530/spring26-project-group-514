@@ -127,9 +127,9 @@ export interface UserRecord {
   username: string; // References Auth records
   display: string;
   createdAt: DateISO;
-  friends: RecordId[]; // References User records
-  friendInReqs: RecordId[]; // References FriendRequest records
-  friendOutReqs: RecordId[]; // References FriendRequest records
+  friends: Record<RecordId, true>; // References User records
+  friendInReqs: Record<RecordId, RecordId>; // References User records -> FriendRequest records
+  friendOutReqs: Record<RecordId, RecordId>; // References User records -> FriendRequest records
 }
 
 /**

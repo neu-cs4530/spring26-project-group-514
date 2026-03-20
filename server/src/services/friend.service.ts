@@ -41,7 +41,7 @@ export async function getFriendsList(username: string): Promise<SafeUserInfo[]> 
 
   const userRecord = await UserRepo.get(user.userId);
 
-  return Promise.all(userRecord.friends.map(populateSafeUserInfo));
+  return Promise.all(Object.keys(userRecord.friends).map(populateSafeUserInfo));
 }
 
 /**
@@ -55,7 +55,10 @@ export async function getPendingRequests(username: string): Promise<FriendReques
   if (!user) throw new Error(`No user ${username}`);
 
   const userRecord = await UserRepo.get(user.userId);
-  const requestIds = [...userRecord.friendInReqs, ...userRecord.friendOutReqs];
+  const requestIds = [
+    ...Object.values(userRecord.friendInReqs),
+    ...Object.values(userRecord.friendOutReqs),
+  ];
   const records = await FriendRequestRepo.getMany(requestIds);
 
   return Promise.all(records.map((record, i) => populateFriendRequest(requestIds[i], record)));
@@ -79,8 +82,8 @@ export async function addFriend(username1: string, username2: string): Promise<v
   const userRecord1 = await UserRepo.get(user1.userId);
   const userRecord2 = await UserRepo.get(user2.userId);
 
-  userRecord1.friends.push(user2.userId);
-  userRecord2.friends.push(user1.userId);
+  userRecord1.friends[user2.userId] = true;
+  userRecord2.friends[user1.userId] = true;
   await UserRepo.set(user1.userId, userRecord1);
   await UserRepo.set(user2.userId, userRecord2);
 }
@@ -105,7 +108,12 @@ export async function sendFriendRequest(
   if (!fromUser) throw new Error(`No user ${fromUsername}`);
   if (!toUser) throw new Error(`No user ${toUsername}`);
 
-  if (fromUser.username === toUser.username) throw new Error(`Can't send friend request to self`);
+  const fromUserRec = await UserRepo.get(fromUser.userId);
+  const toUserRec = await UserRepo.get(toUser.userId);
+
+  if (toUser.userId in fromUserRec.friends) throw new Error(`Already friends`);
+  if (toUser.userId in fromUserRec.friendOutReqs || toUser.userId in fromUserRec.friendInReqs)
+    throw new Error(`Friend request already pending`);
 
   const id = await FriendRequestRepo.add({
     fromUser: fromUser.userId,
@@ -114,13 +122,10 @@ export async function sendFriendRequest(
     status: "pending",
   });
 
-  const fromUserRec = await UserRepo.get(fromUser.userId);
-  const toUserRec = await UserRepo.get(toUser.userId);
-
-  fromUserRec.friendOutReqs.push(id);
-  toUserRec.friendInReqs.push(id);
+  fromUserRec.friendOutReqs[toUser.userId] = id;
+  toUserRec.friendInReqs[fromUser.userId] = id;
   await UserRepo.set(fromUser.userId, fromUserRec);
   await UserRepo.set(toUser.userId, toUserRec);
 
-  return Promise.resolve(populateFriendRequest(id, await FriendRequestRepo.get(id)));
+  return populateFriendRequest(id, await FriendRequestRepo.get(id));
 }
