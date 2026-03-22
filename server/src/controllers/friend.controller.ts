@@ -3,6 +3,7 @@ import {
   getFriendsList,
   getPendingRequests,
   sendFriendRequest,
+  respondToFriendRequest,
 } from "../services/friend.service.ts";
 import { type RestAPI } from "../types.ts";
 import { z } from "zod";
@@ -53,6 +54,33 @@ export const postRequest: RestAPI<FriendRequest> = async (req, res) => {
     const friendReq = await sendFriendRequest(
       body.data.auth.username,
       body.data.payload.toUsername,
+    );
+    res.send(friendReq);
+  } catch (e) {
+    res.status(400).send({ error: e instanceof Error ? e.message : "Bad Request" });
+  }
+};
+
+/**
+ * Handles responding to a friend request
+ *
+ * @param req request containing auth info, requestId, and action (accepted/rejected)
+ * @param res response either returning the updated friend request or an error
+ */
+export const postRespond: RestAPI<FriendRequest> = async (req, res) => {
+  const body = withAuth(
+    z.object({ requestId: z.string(), action: z.enum(["accepted", "rejected"]) }),
+  ).safeParse(req.body);
+  if (body.error) {
+    res.status(400).send({ error: "Poorly-formed request" });
+    return;
+  }
+
+  try {
+    const friendReq = await respondToFriendRequest(
+      body.data.auth.username,
+      body.data.payload.requestId,
+      body.data.payload.action,
     );
     res.send(friendReq);
   } catch (e) {

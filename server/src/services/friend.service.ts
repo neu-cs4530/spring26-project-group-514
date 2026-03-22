@@ -129,3 +129,46 @@ export async function sendFriendRequest(
 
   return populateFriendRequest(id, await FriendRequestRepo.get(id));
 }
+
+/**
+ * Handles responding to a friend request (accept/reject)
+ *
+ * @param username username of the user responding to the request
+ * @param requestId the id of the friend request to respond to
+ * @param action whether to accept or reject the request
+ * @returns the updated friend request
+ */
+export async function respondToFriendRequest(
+  username: string,
+  requestId: string,
+  action: "accepted" | "rejected",
+): Promise<FriendRequest> {
+  const user = await getUserByUsername(username);
+  if (!user) throw new Error(`No user ${username}`);
+
+  const record = await FriendRequestRepo.get(requestId);
+  if (record.status !== "pending") throw new Error("Request already responded to");
+  if (record.toUser !== user.userId) throw new Error("Only the receiver can respond");
+
+  record.status = action;
+  record.respondedAt = new Date().toISOString();
+
+  const fromUserRec = await UserRepo.get(record.fromUser);
+  const toUserRec = await UserRepo.get(record.toUser);
+
+  delete fromUserRec.friendOutReqs[user.userId];
+  delete toUserRec.friendInReqs[record.fromUser];
+
+  if (action === "accepted") {
+    fromUserRec.friends[user.userId] = true;
+    toUserRec.friends[record.fromUser] = true;
+  }
+
+  await Promise.all([
+    FriendRequestRepo.set(requestId, record),
+    UserRepo.set(record.fromUser, fromUserRec),
+    UserRepo.set(record.toUser, toUserRec),
+  ]);
+
+  return populateFriendRequest(requestId, record);
+}

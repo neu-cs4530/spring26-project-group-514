@@ -67,7 +67,8 @@ app.use(
         .Router()
         .get("/list/:username", friend.getList)
         .get("/requests/:username", friend.getRequests)
-        .post("/request", friend.postRequest),
+        .post("/request", friend.postRequest)
+        .post("/respond", friend.postRespond),
     ),
 );
 
