@@ -8,12 +8,22 @@ let response: Response;
 
 describe("GET /api/dm/list/:username", () => {
   it("should 404 for nonexistent user", async () => {
-    response = await supertest(app).get("/api/dm/list/nonexistent");
-    expect(response.status).toBe(404);
+    response = await supertest(app).get("/api/dm/list/nonexistent").set("x-password", "bruh");
+    expect(response.status).toBe(401);
+  });
+
+  it("should 401 for bad credentials", async () => {
+    response = await supertest(app).get("/api/dm/list/user0").set("x-password", "wrong");
+    expect(response.status).toBe(401);
+  });
+
+  it("should 400 when password header is missing", async () => {
+    response = await supertest(app).get("/api/dm/list/user0");
+    expect(response.status).toBe(400);
   });
 
   it("should return empty array for user with no DMs", async () => {
-    response = await supertest(app).get("/api/dm/list/user2");
+    response = await supertest(app).get("/api/dm/list/user2").set("x-password", "pwd2222");
     expect(response.status).toBe(200);
     expect(response.body).toStrictEqual([]);
   });
@@ -44,7 +54,7 @@ describe("GET /api/dm/list/:username", () => {
     await UserRepo.set(user1.userId, user1Rec);
 
     // Both users should see the DM
-    response = await supertest(app).get("/api/dm/list/user0");
+    response = await supertest(app).get("/api/dm/list/user0").set("x-password", "pwd0000");
     expect(response.status).toBe(200);
     expect(response.body).toHaveLength(1);
     expect(response.body[0]).toStrictEqual(
@@ -66,7 +76,7 @@ describe("GET /api/dm/list/:username", () => {
       }),
     );
 
-    response = await supertest(app).get("/api/dm/list/user1");
+    response = await supertest(app).get("/api/dm/list/user1").set("x-password", "pwd1111");
     expect(response.status).toBe(200);
     expect(response.body).toHaveLength(1);
     expect(response.body[0]).toStrictEqual(
