@@ -10,6 +10,7 @@ import * as user from "./controllers/user.controller.ts";
 import * as thread from "./controllers/thread.controller.ts";
 import * as lobby from "./controllers/lobby.controller.ts";
 import * as friend from "./controllers/friend.controller.ts";
+import * as dm from "./controllers/dm.controller.ts";
 import { type GameServer } from "./types.ts";
 
 export const app = express();
@@ -69,7 +70,8 @@ app.use(
         .get("/requests/:username", friend.getRequests)
         .post("/request", friend.postRequest)
         .post("/respond", friend.postRespond),
-    ),
+    )
+    .use("/dm", express.Router().get("/list/:username", dm.getList)),
 );
 
 io.on("connection", (socket) => {

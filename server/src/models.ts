@@ -122,6 +122,9 @@ export interface ThreadRecord {
  * - `display`: A display name
  * - `createdAt`: when this user registered.
  * - `friends`: user's friends id
+ * - `friendInReqs`: user's incoming friend requests
+ * - `friendOutReqs`: user's outgoing friend requests
+ * - `directChats`: user's direct chats
  */
 export interface UserRecord {
   username: string; // References Auth records
@@ -130,6 +133,7 @@ export interface UserRecord {
   friends: Record<RecordId, true>; // References User records
   friendInReqs: Record<RecordId, RecordId>; // References User records -> FriendRequest records
   friendOutReqs: Record<RecordId, RecordId>; // References User records -> FriendRequest records
+  directChats: Record<RecordId, RecordId>; // References User records -> DirectChatRecord records
 }
 
 /**
@@ -150,9 +154,9 @@ export interface FriendRequestRecord {
 
 /**
  * Represents a direct message document in the database.
- * - `participations`: .
- * - `messages`: .
- * - `createdAt`: .
+ * - `participations`: the two people in the dm.
+ * - `messages`: the messages sent in the dm.
+ * - `createdAt`: time dm created.
  */
 export interface DirectChatRecord {
   participants: [RecordId, RecordId]; // Two User IDs

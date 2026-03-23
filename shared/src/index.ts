@@ -17,3 +17,4 @@ export * from "./thread.types.ts";
 export * from "./user.types.ts";
 export * from "./lobby.types.ts";
 export * from "./friend.types.ts";
+export * from "./directChat.types.ts";
