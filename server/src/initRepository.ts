@@ -12,7 +12,6 @@ import {
 import type { GameRecord, ThreadRecord } from "./models.ts";
 import { createChat } from "./services/chat.service.ts";
 import { createUser, updateUser } from "./services/user.service.ts";
-import { addFriend, sendFriendRequest } from "./services/friend.service.ts";
 
 /** Reset stored games with example data. */
 async function resetStoredGames() {
@@ -116,10 +115,6 @@ async function resetStoredUsers() {
   await updateUser("user1", { display: "Yāo" });
   await updateUser("user2", { display: "Sénior Dos" });
   await updateUser("user3", { display: "Frau Drei" });
-
-  await addFriend("user0", "user1");
-
-  await sendFriendRequest("user0", "user2");
 }
 
 export async function resetEverythingToDefaults() {

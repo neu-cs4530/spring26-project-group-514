@@ -7,6 +7,7 @@ import {
 } from "../services/friend.service.ts";
 import { type RestAPI } from "../types.ts";
 import { z } from "zod";
+import { checkAuth } from "../services/auth.service.ts";
 
 /**
  * Handles getting a user's friend list
@@ -50,11 +51,14 @@ export const postRequest: RestAPI<FriendRequest> = async (req, res) => {
     return;
   }
 
+  const user = await checkAuth(body.data.auth);
+  if (!user) {
+    res.status(403).send({ error: "Invalid credentials" });
+    return;
+  }
+
   try {
-    const friendReq = await sendFriendRequest(
-      body.data.auth.username,
-      body.data.payload.toUsername,
-    );
+    const friendReq = await sendFriendRequest(user.username, body.data.payload.toUsername);
     res.send(friendReq);
   } catch (e) {
     res.status(400).send({ error: e instanceof Error ? e.message : "Bad Request" });
@@ -76,9 +80,15 @@ export const postRespond: RestAPI<FriendRequest> = async (req, res) => {
     return;
   }
 
+  const user = await checkAuth(body.data.auth);
+  if (!user) {
+    res.status(403).send({ error: "Invalid credentials" });
+    return;
+  }
+
   try {
     const friendReq = await respondToFriendRequest(
-      body.data.auth.username,
+      user.username,
       body.data.payload.requestId,
       body.data.payload.action,
     );

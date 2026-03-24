@@ -13,3 +13,15 @@ export interface DirectChatInfo {
   messages: MessageInfo[];
   createdAt: Date;
 }
+
+/**
+ * Represents a client facing summary of DMs
+ * - `directChatId`: refers to DirectChatInfo ID
+ * - `participants`: the two people involved in the DMs
+ * - `createdAt`: the date the direct chat was created
+ */
+export interface DirectChatSummary {
+  directChatId: string; // ID to referencing to DirectChatInfo
+  participants: [string, string];
+  createdAt: Date;
+}

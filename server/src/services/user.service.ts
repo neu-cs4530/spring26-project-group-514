@@ -43,6 +43,7 @@ export async function createUser(
     friends: {},
     friendInReqs: {},
     friendOutReqs: {},
+    directChats: {},
   });
   await updateAuth(username, password, id);
   return Promise.resolve({
