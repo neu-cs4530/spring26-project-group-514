@@ -1,5 +1,3 @@
-import type { SafeUserInfo } from "./index.ts";
-
 /**
  * Represents a friend request exposed to the client
  * - `id`: the id to reference to this friend request.
@@ -16,9 +14,4 @@ export interface FriendRequest {
   status: "pending" | "accepted" | "rejected";
   createdAt: Date;
   respondedAt?: Date;
-}
-
-export interface FriendSummary {
-  user: SafeUserInfo;
-  friendsSince: Date;
 }

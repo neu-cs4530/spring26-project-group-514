@@ -20,7 +20,7 @@ export default function Friends() {
         ) : (
           <div className="dottedList" role="list">
             {friends.map((friend) => (
-              <FriendSummaryView {...friend} key={friend.user.username} onRemove={removeFriend} />
+              <FriendSummaryView {...friend} key={friend.username} onRemove={removeFriend} />
             ))}
           </div>
         )}

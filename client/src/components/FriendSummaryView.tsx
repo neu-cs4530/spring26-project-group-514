@@ -1,7 +1,6 @@
 import "./FriendSummaryView.css";
-import type { FriendSummary } from "@gamenite/shared";
+import type { SafeUserInfo } from "@gamenite/shared";
 import UserLink from "./UserLink.tsx";
-import useTimeSince from "../hooks/useTimeSince.ts";
 
 /**
  * Displays a single accepted friend as part of a friends list.
@@ -9,17 +8,15 @@ import useTimeSince from "../hooks/useTimeSince.ts";
  * friends, and a remove button.
  */
 export default function FriendSummaryView({
-  user,
-  friendsSince,
+  username,
+  display,
+  createdAt,
   onRemove,
-}: FriendSummary & { onRemove: (username: string) => void }) {
-  const timeSince = useTimeSince();
-
+}: SafeUserInfo & { onRemove: (username: string) => void }) {
   return (
     <div className="friendSummary" role="listitem">
-      <UserLink user={user} capitalize />
-      <div className="smallAndGray">Friends since {timeSince(friendsSince)}</div>
-      <button className="secondary narrow" onClick={() => onRemove(user.username)}>
+      <UserLink user={{ username, display, createdAt }} capitalize />
+      <button className="secondary narrow" onClick={() => onRemove(username)}>
         Remove
       </button>
     </div>
