@@ -7,7 +7,7 @@ import { getUserByUsername } from "../src/services/auth.service.ts";
 let response: Response;
 
 describe("GET /api/dm/list/:username", () => {
-  it("should 404 for nonexistent user", async () => {
+  it("should 401 for nonexistent user", async () => {
     response = await supertest(app).get("/api/dm/list/nonexistent").set("x-password", "bruh");
     expect(response.status).toBe(401);
   });
@@ -59,43 +59,23 @@ describe("GET /api/dm/list/:username", () => {
     expect(response.body).toHaveLength(1);
     expect(response.body[0]).toStrictEqual(
       expect.objectContaining({
-        id: chatId,
+        directChatId: chatId,
         participants: ["user0", "user1"],
+        createdAt: expect.anything(),
       }),
     );
-    expect(response.body[0].messages).toHaveLength(1);
-    expect(response.body[0].messages[0]).toStrictEqual(
-      expect.objectContaining({
-        messageId: msgId,
-        text: "hey!",
-        createdBy: {
-          username: user0.username,
-          display: "The Knight Of Games",
-          createdAt: expect.anything(),
-        },
-      }),
-    );
+    expect(response.body[0]).not.toHaveProperty("messages");
 
     response = await supertest(app).get("/api/dm/list/user1").set("x-password", "pwd1111");
     expect(response.status).toBe(200);
     expect(response.body).toHaveLength(1);
     expect(response.body[0]).toStrictEqual(
       expect.objectContaining({
-        id: chatId,
+        directChatId: chatId,
         participants: ["user0", "user1"],
+        createdAt: expect.anything(),
       }),
     );
-    expect(response.body[0].messages).toHaveLength(1);
-    expect(response.body[0].messages[0]).toStrictEqual(
-      expect.objectContaining({
-        messageId: msgId,
-        text: "hey!",
-        createdBy: {
-          username: user0.username,
-          display: "The Knight Of Games",
-          createdAt: expect.anything(),
-        },
-      }),
-    );
+    expect(response.body[0]).not.toHaveProperty("messages");
   });
 });

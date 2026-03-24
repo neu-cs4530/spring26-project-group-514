@@ -1,24 +1,46 @@
-import { type DirectChatInfo } from "@gamenite/shared";
+import { type DirectChatSummary } from "@gamenite/shared";
 import { DirectChatRepo, UserRepo } from "../repository.ts";
 import { getUserByUsername } from "./auth.service.ts";
-import { getMessagesById } from "./message.service.ts";
 
 /**
  * Populates a DirectChatRecord into a DirectChatInfo for the client.
  */
-async function populateDirectChatInfo(
+// async function populateDirectChatInfo(
+//   id: string,
+//   record: { participants: [string, string]; messages: string[]; createdAt: string },
+// ): Promise<DirectChatInfo> {
+//   const [user1, user2] = await Promise.all([
+//     UserRepo.get(record.participants[0]),
+//     UserRepo.get(record.participants[1]),
+//   ]);
+
+//   return {
+//     id,
+//     participants: [user1.username, user2.username],
+//     messages: await getMessagesById(record.messages),
+//     createdAt: new Date(record.createdAt),
+//   };
+// }
+
+/**
+ * Populates a DirectChatRecord into a DirectChatSummary for the client.
+ *
+ * @param id
+ * @param record
+ * @returns
+ */
+async function populateDirectChatSummary(
   id: string,
   record: { participants: [string, string]; messages: string[]; createdAt: string },
-): Promise<DirectChatInfo> {
+): Promise<DirectChatSummary> {
   const [user1, user2] = await Promise.all([
     UserRepo.get(record.participants[0]),
     UserRepo.get(record.participants[1]),
   ]);
 
   return {
-    id,
+    directChatId: id,
     participants: [user1.username, user2.username],
-    messages: await getMessagesById(record.messages),
     createdAt: new Date(record.createdAt),
   };
 }
@@ -30,7 +52,7 @@ async function populateDirectChatInfo(
  * @returns all DirectChatInfo objects where the user is a participant
  * @throws if the username does not exist
  */
-export async function getDmList(username: string): Promise<DirectChatInfo[]> {
+export async function getDmList(username: string): Promise<DirectChatSummary[]> {
   const user = await getUserByUsername(username);
   if (!user) throw new Error(`No user ${username}`);
 
@@ -41,5 +63,5 @@ export async function getDmList(username: string): Promise<DirectChatInfo[]> {
 
   const records = await DirectChatRepo.getMany(chatIds);
 
-  return Promise.all(records.map((record, i) => populateDirectChatInfo(chatIds[i], record)));
+  return Promise.all(records.map((record, i) => populateDirectChatSummary(chatIds[i], record)));
 }

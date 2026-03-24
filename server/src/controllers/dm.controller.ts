@@ -1,4 +1,4 @@
-import { type DirectChatInfo } from "@gamenite/shared";
+import { type DirectChatSummary } from "@gamenite/shared";
 import { getDmList } from "../services/dm.service.ts";
 import { type RestAPI } from "../types.ts";
 import { checkAuth } from "../services/auth.service.ts";
@@ -6,7 +6,7 @@ import { checkAuth } from "../services/auth.service.ts";
 /**
  * Handles getting all DM conversations for a user.
  */
-export const getList: RestAPI<DirectChatInfo[], { username: string }> = async (req, res) => {
+export const getList: RestAPI<DirectChatSummary[], { username: string }> = async (req, res) => {
   const password = req.headers["x-password"];
   if (typeof password !== "string") {
     res.status(400).send({ error: "Missing password header" });

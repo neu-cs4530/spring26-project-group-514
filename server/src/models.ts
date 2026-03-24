@@ -133,7 +133,7 @@ export interface UserRecord {
   friends: Record<RecordId, true>; // References User records
   friendInReqs: Record<RecordId, RecordId>; // References User records -> FriendRequest records
   friendOutReqs: Record<RecordId, RecordId>; // References User records -> FriendRequest records
-  directChats: Record<RecordId, RecordId>; // References User records -> DirectChatRecord records
+  directChats: Record<RecordId, RecordId>; // References User records -> DirectChatSummary records
 }
 
 /**
