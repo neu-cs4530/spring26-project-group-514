@@ -1,8 +1,8 @@
 import type { ErrorMsg, FriendRequest, FriendSummary } from "@gamenite/shared";
 import { useEffect, useState } from "react";
-import { getFriendList, respondToRequest } from "../services/friendService.ts";
+import { getFriendList /*, respondToRequest*/ } from "../services/friendService.ts";
 import useLoginContext from "./useLoginContext.ts";
-import useAuth from "./useAuth.ts";
+//import useAuth from "./useAuth.ts"; // saved for later remove friend API implementation.
 
 /**
  * Custom hook to get the current user's accepted friends list.
@@ -17,7 +17,7 @@ export default function useFriendList(): {
   removeFriend: (targetUsername: string) => void;
 } {
   const { user, socket } = useLoginContext();
-  const auth = useAuth();
+  //const auth = useAuth(); // saved for later remove friend API implementation.
   const [friends, setFriends] = useState<FriendSummary[] | ErrorMsg | null>(null);
 
   useEffect(() => {
@@ -29,16 +29,14 @@ export default function useFriendList(): {
       if (updated.status === "rejected") {
         setFriends((prev) =>
           Array.isArray(prev)
-            ? prev.filter((f) => f.username !== updated.fromUser && f.username !== updated.toUser)
+            ? prev.filter(
+                (f) => f.user.username !== updated.fromUser && f.user.username !== updated.toUser,
+              )
             : prev,
         );
       }
       if (updated.status === "accepted") {
-        const newFriend: FriendSummary = {
-          username: updated.fromUser === user.username ? updated.toUser : updated.fromUser,
-          friendsSince: updated.respondedAt ?? updated.createdAt,
-        };
-        setFriends((prev) => (Array.isArray(prev) ? [...prev, newFriend] : [newFriend]));
+        getFriendList(user.username).then(setFriends);
       }
     };
 
@@ -52,7 +50,7 @@ export default function useFriendList(): {
     // TODO: confirm with teammate whether /respond with "rejected" is the
     // intended remove mechanism, or if a dedicated endpoint will be added.
     setFriends((prev) =>
-      Array.isArray(prev) ? prev.filter((f) => f.username !== targetUsername) : prev,
+      Array.isArray(prev) ? prev.filter((f) => f.user.username !== targetUsername) : prev,
     );
   };
 

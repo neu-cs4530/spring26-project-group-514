@@ -9,7 +9,7 @@ import useTimeSince from "../hooks/useTimeSince.ts";
  * friends, and a remove button.
  */
 export default function FriendSummaryView({
-  username,
+  user,
   friendsSince,
   onRemove,
 }: FriendSummary & { onRemove: (username: string) => void }) {
@@ -17,9 +17,9 @@ export default function FriendSummaryView({
 
   return (
     <div className="friendSummary" role="listitem">
-      <UserLink user={{ username }} capitalize />
+      <UserLink user={user} capitalize />
       <div className="smallAndGray">Friends since {timeSince(friendsSince)}</div>
-      <button className="secondary narrow" onClick={() => onRemove(username)}>
+      <button className="secondary narrow" onClick={() => onRemove(user.username)}>
         Remove
       </button>
     </div>
