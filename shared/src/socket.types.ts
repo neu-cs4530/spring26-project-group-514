@@ -13,6 +13,7 @@ import {
   type GameScoresPayload,
   type TaggedGameView,
 } from "./game.types.ts";
+import { type FriendRequest } from "./friend.types.ts";
 import { type SafeUserInfo } from "./user.types.ts";
 
 /**
@@ -37,6 +38,8 @@ export interface ServerToClientEvents {
   chatNewMessage: (payload: ChatNewMessagePayload) => void;
   chatUserJoined: (payload: ChatUserJoinedPayload) => void;
   chatUserLeft: (payload: ChatUserLeftPayload) => void;
+  friendRequestReceived: (request: FriendRequest) => void;
+  friendRequestUpdated: (request: FriendRequest) => void;
   gamePlayersUpdated: (payload: SafeUserInfo[]) => void;
   gameScoresUpdated: (payload: GameScoresPayload) => void;
   gameStateUpdated: (payload: TaggedGameView & { forPlayer: boolean }) => void;

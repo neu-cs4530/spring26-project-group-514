@@ -38,6 +38,9 @@ export default function SideBarNav() {
       >
         Profile
       </NavLink>
+      <NavLink to="/friends" className={navClass}>
+        Friends
+      </NavLink>
     </div>
   );
 }
