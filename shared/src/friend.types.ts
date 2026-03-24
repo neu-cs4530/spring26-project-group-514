@@ -15,3 +15,8 @@ export interface FriendRequest {
   createdAt: Date;
   respondedAt?: Date;
 }
+
+export interface FriendSummary {
+  username: string;
+  friendsSince: Date;
+}
