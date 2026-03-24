@@ -5,7 +5,7 @@ import { type GameServicer } from "../games/gameServiceManager.ts";
 import { nimGameService } from "../games/nim.ts";
 import { guessGameService } from "../games/guess.ts";
 import { type GameViewUpdates, type UserWithId } from "../types.ts";
-import { GameRepo } from "../repository.ts";
+import { GameHistoryRepo, GameRepo } from "../repository.ts";
 
 /**
  * The service interface for individual games
@@ -184,6 +184,15 @@ export async function updateGame(
   game.state = result.state;
   game.done = game.done || result.done;
   await GameRepo.set(gameId, game);
+
+  if (result.done) {
+    await GameHistoryRepo.set(gameId, {
+      type: game.type,
+      players: game.players,
+      endedAt: new Date().toISOString(),
+      state: game.state,
+    });
+  }
 
   return {
     views: result.views,
