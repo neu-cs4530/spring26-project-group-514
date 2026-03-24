@@ -59,7 +59,10 @@ export const getFriendList = async (username: string): APIResponse<FriendSummary
  */
 export const getPendingRequests = async (username: string): APIResponse<FriendRequest[]> => {
   try {
-    const res = await api.get<FriendRequest[] | ErrorMsg>(`${FRIEND_API_URL}/requests/${username}`);
+    const res = await api.get<FriendRequest[] | ErrorMsg>(
+      `${FRIEND_API_URL}/requests/${username}`,
+      { headers: { "Cache-Control": "no-cache" } }, // TEMPORARY to prevent caching while debugging friend request POST/GET. TODO: delete.
+    );
     return res.data;
   } catch (error) {
     return exceptionToErrorMsg(error);
