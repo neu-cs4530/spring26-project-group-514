@@ -172,3 +172,39 @@ export async function respondToFriendRequest(
 
   return populateFriendRequest(requestId, record);
 }
+
+/**
+ * Removes a friend from both users' friend lists
+ *
+ * @param username the user requesting the removal
+ * @param friendUsername the friend to remove
+ * @returns the removed friend's safe user info
+ */
+export async function removeFriend(
+  username: string,
+  friendUsername: string,
+): Promise<SafeUserInfo> {
+  if (username === friendUsername) throw new Error("Cannot remove yourself");
+
+  const user = await getUserByUsername(username);
+  const friend = await getUserByUsername(friendUsername);
+
+  if (!user) throw new Error(`No user ${username}`);
+  if (!friend) throw new Error(`No user ${friendUsername}`);
+
+  const userRecord = await UserRepo.get(user.userId);
+  const friendRecord = await UserRepo.get(friend.userId);
+
+  if (!(friend.userId in userRecord.friends) || !(user.userId in friendRecord.friends))
+    throw new Error("Not friends");
+
+  delete userRecord.friends[friend.userId];
+  delete friendRecord.friends[user.userId];
+
+  await Promise.all([
+    UserRepo.set(user.userId, userRecord),
+    UserRepo.set(friend.userId, friendRecord),
+  ]);
+
+  return populateSafeUserInfo(friend.userId);
+}
