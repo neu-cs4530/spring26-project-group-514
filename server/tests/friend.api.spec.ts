@@ -235,3 +235,71 @@ describe("POST /api/friend/respond", () => {
     expect(response.status).toBe(400);
   });
 });
+
+describe("POST /api/friend/remove", () => {
+  it("should return 400 on ill-formed payload", async () => {
+    response = await supertest(app).post("/api/friend/remove").send({ bad: "data" });
+    expect(response.status).toBe(400);
+  });
+
+  it("should return 403 for invalid credentials", async () => {
+    response = await supertest(app)
+      .post("/api/friend/remove")
+      .send({
+        auth: { username: "user0", password: "wrong" },
+        payload: { friendUsername: "user1" },
+      });
+    expect(response.status).toBe(403);
+  });
+
+  it("should return 400 when not friends", async () => {
+    response = await supertest(app)
+      .post("/api/friend/remove")
+      .send({ auth: auth0, payload: { friendUsername: "user1" } });
+    expect(response.status).toBe(400);
+  });
+
+  it("should return 400 for nonexistent target user", async () => {
+    response = await supertest(app)
+      .post("/api/friend/remove")
+      .send({ auth: auth0, payload: { friendUsername: "nonexistent" } });
+    expect(response.status).toBe(400);
+  });
+
+  it("should return 400 when removing self", async () => {
+    response = await supertest(app)
+      .post("/api/friend/remove")
+      .send({ auth: auth0, payload: { friendUsername: "user0" } });
+    expect(response.status).toBe(400);
+  });
+
+  it("should remove a friend successfully", async () => {
+    // Create friendship: user0 sends request, user1 accepts
+    const sendRes = await supertest(app)
+      .post("/api/friend/request")
+      .send({ auth: auth0, payload: { toUsername: "user1" } });
+    await supertest(app)
+      .post("/api/friend/respond")
+      .send({ auth: auth1, payload: { requestId: sendRes.body.id, action: "accepted" } });
+
+    // Remove the friend
+    response = await supertest(app)
+      .post("/api/friend/remove")
+      .send({ auth: auth0, payload: { friendUsername: "user1" } });
+    expect(response.status).toBe(200);
+    expect(response.body).toStrictEqual(
+      expect.objectContaining({ username: "user1", display: "Yāo" }),
+    );
+
+    // Verify both users' friend lists are updated
+    let friendsRes = await supertest(app).get("/api/friend/list/user0");
+    let friends: { username: string }[] = friendsRes.body;
+    let friendNames = friends.map((f) => f.username);
+    expect(friendNames).not.toContain("user1");
+
+    friendsRes = await supertest(app).get("/api/friend/list/user1");
+    friends = friendsRes.body;
+    friendNames = friends.map((f) => f.username);
+    expect(friendNames).not.toContain("user0");
+  });
+});

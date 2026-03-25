@@ -4,6 +4,7 @@ import {
   getPendingRequests,
   sendFriendRequest,
   respondToFriendRequest,
+  removeFriend,
 } from "../services/friend.service.ts";
 import { type RestAPI } from "../types.ts";
 import { z } from "zod";
@@ -93,6 +94,33 @@ export const postRespond: RestAPI<FriendRequest> = async (req, res) => {
       body.data.payload.action,
     );
     res.send(friendReq);
+  } catch (e) {
+    res.status(400).send({ error: e instanceof Error ? e.message : "Bad Request" });
+  }
+};
+
+/**
+ * Handles removing a friend
+ *
+ * @param req request containing auth info and the friend's username to remove
+ * @param res response either returning the removed friend's info or an error
+ */
+export const postRemove: RestAPI<SafeUserInfo> = async (req, res) => {
+  const body = withAuth(z.object({ friendUsername: z.string() })).safeParse(req.body);
+  if (body.error) {
+    res.status(400).send({ error: "Poorly-formed request" });
+    return;
+  }
+
+  const user = await checkAuth(body.data.auth);
+  if (!user) {
+    res.status(403).send({ error: "Invalid credentials" });
+    return;
+  }
+
+  try {
+    const removed = await removeFriend(user.username, body.data.payload.friendUsername);
+    res.send(removed);
   } catch (e) {
     res.status(400).send({ error: e instanceof Error ? e.message : "Bad Request" });
   }
