@@ -5,7 +5,7 @@ import {
   populateSafeUserInfo,
   updateUser,
 } from "../services/user.service.ts";
-import { type RestAPI } from "../types.ts";
+import { type RestAPI, type SocketAPI } from "../types.ts";
 import { z } from "zod";
 import { checkAuth, getUserByUsername } from "../services/auth.service.ts";
 
@@ -100,4 +100,16 @@ export const postList: RestAPI<SafeUserInfo[]> = async (req, res) => {
   }
 
   res.send(users);
+};
+
+/**
+ * Handle a socket request to register a user: verify the user's credentials
+ * and join the socket to a personal room (`user:<username>`) so the server
+ * can emit targeted events to that user.
+ */
+export const socketRegisterUser: SocketAPI = (socket) => async (payload) => {
+  const body = withAuth(z.null()).safeParse(payload);
+  if (body.error) return;
+  const user = await checkAuth(body.data.auth);
+  if (user) await socket.join(`user:${user.username}`);
 };

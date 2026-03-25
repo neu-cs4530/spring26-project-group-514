@@ -6,7 +6,7 @@ import {
   respondToFriendRequest,
   removeFriend,
 } from "../services/friend.service.ts";
-import { type RestAPI } from "../types.ts";
+import { type RestAPI, type GameServer } from "../types.ts";
 import { z } from "zod";
 import { checkAuth } from "../services/auth.service.ts";
 
@@ -41,30 +41,35 @@ export const getRequests: RestAPI<FriendRequest[], { username: string }> = async
 
 /**
  * Handles sending friend request from one user to another
+ * Emits `friendRequestReceived` to the target user's socket room.
  *
+ * @param io the Socket.io server instance used to emit the event.
  * @param req request containing auth. info of user and username of requested friend.
  * @param res response either returning the friend request or an error.
  */
-export const postRequest: RestAPI<FriendRequest> = async (req, res) => {
-  const body = withAuth(z.object({ toUsername: z.string() })).safeParse(req.body);
-  if (body.error) {
-    res.status(400).send({ error: "Poorly-formed request" });
-    return;
-  }
+export const postRequest =
+  (io: GameServer): RestAPI<FriendRequest> =>
+  async (req, res) => {
+    const body = withAuth(z.object({ toUsername: z.string() })).safeParse(req.body);
+    if (body.error) {
+      res.status(400).send({ error: "Poorly-formed request" });
+      return;
+    }
 
-  const user = await checkAuth(body.data.auth);
-  if (!user) {
-    res.status(403).send({ error: "Invalid credentials" });
-    return;
-  }
+    const user = await checkAuth(body.data.auth);
+    if (!user) {
+      res.status(403).send({ error: "Invalid credentials" });
+      return;
+    }
 
-  try {
-    const friendReq = await sendFriendRequest(user.username, body.data.payload.toUsername);
-    res.send(friendReq);
-  } catch (e) {
-    res.status(400).send({ error: e instanceof Error ? e.message : "Bad Request" });
-  }
-};
+    try {
+      const friendReq = await sendFriendRequest(user.username, body.data.payload.toUsername);
+      io.to(`user:${body.data.payload.toUsername}`).emit("friendRequestReceived", friendReq);
+      res.send(friendReq);
+    } catch (e) {
+      res.status(400).send({ error: e instanceof Error ? e.message : "Bad Request" });
+    }
+  };
 
 /**
  * Handles responding to a friend request
