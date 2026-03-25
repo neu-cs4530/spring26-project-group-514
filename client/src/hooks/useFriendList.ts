@@ -1,4 +1,4 @@
-import type { ErrorMsg, FriendRequest, FriendSummary } from "@gamenite/shared";
+import type { ErrorMsg, FriendRequest, SafeUserInfo } from "@gamenite/shared";
 import { useEffect, useState } from "react";
 import { getFriendList /*, respondToRequest*/ } from "../services/friendService.ts";
 import useLoginContext from "./useLoginContext.ts";
@@ -13,12 +13,12 @@ import useLoginContext from "./useLoginContext.ts";
  *          plus a `removeFriend` callback
  */
 export default function useFriendList(): {
-  friends: { message: string } | FriendSummary[];
+  friends: { message: string } | SafeUserInfo[];
   removeFriend: (targetUsername: string) => void;
 } {
   const { user, socket } = useLoginContext();
   //const auth = useAuth(); // saved for later remove friend API implementation.
-  const [friends, setFriends] = useState<FriendSummary[] | ErrorMsg | null>(null);
+  const [friends, setFriends] = useState<SafeUserInfo[] | ErrorMsg | null>(null);
 
   useEffect(() => {
     getFriendList(user.username).then(setFriends);
@@ -29,9 +29,7 @@ export default function useFriendList(): {
       if (updated.status === "rejected") {
         setFriends((prev) =>
           Array.isArray(prev)
-            ? prev.filter(
-                (f) => f.user.username !== updated.fromUser && f.user.username !== updated.toUser,
-              )
+            ? prev.filter((f) => f.username !== updated.fromUser && f.username !== updated.toUser)
             : prev,
         );
       }
@@ -50,7 +48,7 @@ export default function useFriendList(): {
     // TODO: confirm with teammate whether /respond with "rejected" is the
     // intended remove mechanism, or if a dedicated endpoint will be added.
     setFriends((prev) =>
-      Array.isArray(prev) ? prev.filter((f) => f.user.username !== targetUsername) : prev,
+      Array.isArray(prev) ? prev.filter((f) => f.username !== targetUsername) : prev,
     );
   };
 
