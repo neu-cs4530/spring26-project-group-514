@@ -71,7 +71,7 @@ app.use(
         .post("/request", friend.postRequest)
         .post("/respond", friend.postRespond),
     )
-    .use("/dm", express.Router().get("/list/:username", dm.getList)),
+    .use("/dm", express.Router().get("/list/:username", dm.getList).get("/:id", dm.getById)),
 );
 
 io.on("connection", (socket) => {
