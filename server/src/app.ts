@@ -68,7 +68,7 @@ app.use(
         .Router()
         .get("/list/:username", friend.getList)
         .get("/requests/:username", friend.getRequests)
-        .post("/request", friend.postRequest)
+        .post("/request", friend.postRequest(io))
         .post("/respond", friend.postRespond)
         .post("/remove", friend.postRemove),
     )
@@ -91,6 +91,8 @@ io.on("connection", (socket) => {
   socket.on("gameMakeMove", game.socketMakeMove(socket, io));
   socket.on("gameStart", game.socketStart(socket, io));
   socket.on("gameWatch", game.socketWatch(socket, io));
+
+  socket.on("registerUser", user.socketRegisterUser(socket, io));
 
   socket.onAny((name, payload) => {
     const zPayload = z.object({ auth: z.object({ username: z.string() }), payload: z.any() });
