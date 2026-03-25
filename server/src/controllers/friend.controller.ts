@@ -67,7 +67,7 @@ export const postRequest =
       io.to(`user:${body.data.payload.toUsername}`).emit("friendRequestReceived", friendReq);
       res.send(friendReq);
     } catch (e) {
-      res.status(400).send({ error: e instanceof Error ? e.message : "Bad Request" });
+      res.status(400).send({ error: "Bad Request" });
     }
   };
 
@@ -100,7 +100,7 @@ export const postRespond: RestAPI<FriendRequest> = async (req, res) => {
     );
     res.send(friendReq);
   } catch (e) {
-    res.status(400).send({ error: e instanceof Error ? e.message : "Bad Request" });
+    res.status(400).send({ error: "Bad Request" });
   }
 };
 
@@ -127,6 +127,6 @@ export const postRemove: RestAPI<SafeUserInfo> = async (req, res) => {
     const removed = await removeFriend(user.username, body.data.payload.friendUsername);
     res.send(removed);
   } catch (e) {
-    res.status(400).send({ error: e instanceof Error ? e.message : "Bad Request" });
+    res.status(400).send({ error: "Bad Request" });
   }
 };
