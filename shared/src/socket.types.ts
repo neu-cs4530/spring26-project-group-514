@@ -27,6 +27,7 @@ export interface ClientToServerEvents {
   gameMakeMove: (payload: WithAuth<GameMakeMovePayload>) => void;
   gameStart: (payload: WithAuth<string>) => void;
   gameWatch: (payload: WithAuth<string>) => void;
+  registerUser: (payload: WithAuth<null>) => void; // Maps an anonymous socket connection to a specific user
 }
 
 /**
