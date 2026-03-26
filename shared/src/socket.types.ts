@@ -15,6 +15,7 @@ import {
 } from "./game.types.ts";
 import { type FriendRequest } from "./friend.types.ts";
 import { type SafeUserInfo } from "./user.types.ts";
+import { type DirectChatInfo } from "./directChat.types.ts";
 
 /**
  * The Socket.io interface for client to server communication
@@ -28,6 +29,7 @@ export interface ClientToServerEvents {
   gameStart: (payload: WithAuth<string>) => void;
   gameWatch: (payload: WithAuth<string>) => void;
   registerUser: (payload: WithAuth<null>) => void; // Maps an anonymous socket connection to a specific user
+  dmJoin: (payload: WithAuth<string>) => void;
 }
 
 /**
@@ -45,4 +47,5 @@ export interface ServerToClientEvents {
   gameScoresUpdated: (payload: GameScoresPayload) => void;
   gameStateUpdated: (payload: TaggedGameView & { forPlayer: boolean }) => void;
   gameWatched: (payload: GamePlayInfo) => void;
+  dmJoined: (payload: DirectChatInfo) => void;
 }

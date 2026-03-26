@@ -94,6 +94,8 @@ io.on("connection", (socket) => {
 
   socket.on("registerUser", user.socketRegisterUser(socket, io));
 
+  socket.on("dmJoin", dm.socketDmJoin(socket, io));
+
   socket.onAny((name, payload) => {
     const zPayload = z.object({ auth: z.object({ username: z.string() }), payload: z.any() });
     const checked = zPayload.safeParse(payload);
