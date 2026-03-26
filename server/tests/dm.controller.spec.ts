@@ -1,7 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { GameServer, GameServerSocket } from "../src/types.ts";
 import { logSocketError } from "../src/controllers/socket.controller.ts";
-import { socketDmJoin, socketDmLeave } from "../src/controllers/dm.controller.ts";
+import {
+  socketDmJoin,
+  socketDmLeave,
+  socketDmSendMessage,
+} from "../src/controllers/dm.controller.ts";
 import { DirectChatRepo, UserRepo } from "../src/repository.ts";
 import { getUserByUsername } from "../src/services/auth.service.ts";
 
@@ -113,5 +117,54 @@ describe("socketDmLeave", () => {
     await socketDmLeave(mockSocket, mockServer)({ auth: auth0, payload: chatId });
     expect(logSocketError).not.toHaveBeenCalled();
     expect(mockSocket.leave).toHaveBeenCalledExactlyOnceWith(chatId);
+  });
+});
+
+describe("socketDmSendMessage", () => {
+  it("should reject invalid auth", async () => {
+    await socketDmSendMessage(
+      mockSocket,
+      mockServer,
+    )({
+      auth: badAuth,
+      payload: { chatId: "someId", text: "hello" },
+    });
+    expect(logSocketError).toHaveBeenCalledExactlyOnceWith(mockSocket, new Error("Invalid auth"));
+  });
+
+  it("should reject a non-participant", async () => {
+    const chatId = await seedDm();
+    const auth2 = { username: "user2", password: "pwd2222" };
+    await socketDmSendMessage(
+      mockSocket,
+      mockServer,
+    )({
+      auth: auth2,
+      payload: { chatId, text: "hello" },
+    });
+    expect(logSocketError).toHaveBeenCalledExactlyOnceWith(
+      mockSocket,
+      new Error(`user user2 is not a participant of DM ${chatId}`),
+    );
+  });
+
+  it("should send a message and emit dmNewMessage", async () => {
+    const chatId = await seedDm();
+    await socketDmSendMessage(
+      mockSocket,
+      mockServer,
+    )({
+      auth: auth0,
+      payload: { chatId, text: "hello" },
+    });
+    expect(logSocketError).not.toHaveBeenCalled();
+    expect(mockServer.to).toHaveBeenCalledExactlyOnceWith(chatId);
+    expect(mockServer.emit).toHaveBeenCalledExactlyOnceWith(
+      "dmNewMessage",
+      expect.objectContaining({
+        chatId,
+        message: expect.objectContaining({ text: "hello" }),
+      }),
+    );
   });
 });

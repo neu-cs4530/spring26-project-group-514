@@ -1,9 +1,15 @@
-import { type DirectChatSummary, type DirectChatInfo, withAuth } from "@gamenite/shared";
-import { getDmById, getDmList } from "../services/dm.service.ts";
+import {
+  type DirectChatSummary,
+  type DirectChatInfo,
+  withAuth,
+  zNewMessageRequest,
+} from "@gamenite/shared";
+import { addMessageToDm, getDmById, getDmList } from "../services/dm.service.ts";
 import { type RestAPI, type SocketAPI } from "../types.ts";
 import { checkAuth, enforceAuth } from "../services/auth.service.ts";
 import { z } from "zod";
 import { logSocketError } from "./socket.controller.ts";
+import { createMessage } from "../services/message.service.ts";
 
 /**
  * Handles getting all DM conversations for a user.
@@ -92,6 +98,30 @@ export const socketDmLeave: SocketAPI = (socket) => async (body) => {
       throw new Error("Cannot leave a DM room you are not in");
     }
     await socket.leave(dmId);
+  } catch (err) {
+    logSocketError(socket, err);
+  }
+};
+
+/**
+ * Handle a socket request to send a message in a DM: verify credentials,
+ * check the user is a participant, persist the message, and broadcast it
+ * to the DM room.
+ */
+export const socketDmSendMessage: SocketAPI = (socket, io) => async (body) => {
+  try {
+    const {
+      auth,
+      payload: { chatId, text },
+    } = withAuth(zNewMessageRequest).parse(body);
+    const user = await enforceAuth(auth);
+    const chat = await getDmById(chatId);
+    if (!chat.participants.includes(user.username)) {
+      throw new Error(`user ${user.username} is not a participant of DM ${chatId}`);
+    }
+    const message = await createMessage(user, text, new Date());
+    await addMessageToDm(chatId, message.messageId);
+    io.to(chatId).emit("dmNewMessage", { chatId, message });
   } catch (err) {
     logSocketError(socket, err);
   }

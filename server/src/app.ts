@@ -96,6 +96,7 @@ io.on("connection", (socket) => {
 
   socket.on("dmJoin", dm.socketDmJoin(socket, io));
   socket.on("dmLeave", dm.socketDmLeave(socket, io));
+  socket.on("dmSendMessage", dm.socketDmSendMessage(socket, io));
 
   socket.onAny((name, payload) => {
     const zPayload = z.object({ auth: z.object({ username: z.string() }), payload: z.any() });
