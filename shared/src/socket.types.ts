@@ -30,6 +30,7 @@ export interface ClientToServerEvents {
   gameWatch: (payload: WithAuth<string>) => void;
   registerUser: (payload: WithAuth<null>) => void; // Maps an anonymous socket connection to a specific user
   dmJoin: (payload: WithAuth<string>) => void;
+  dmLeave: (payload: WithAuth<string>) => void;
 }
 
 /**

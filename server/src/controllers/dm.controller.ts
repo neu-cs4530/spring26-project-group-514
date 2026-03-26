@@ -79,3 +79,20 @@ export const socketDmJoin: SocketAPI = (socket) => async (body) => {
     logSocketError(socket, err);
   }
 };
+
+/**
+ * Handle a socket request to leave a DM room: verify credentials and leave
+ * the socket room.
+ */
+export const socketDmLeave: SocketAPI = (socket) => async (body) => {
+  try {
+    const { auth, payload: dmId } = withAuth(z.string()).parse(body);
+    await enforceAuth(auth);
+    if (!socket.rooms.has(dmId)) {
+      throw new Error("Cannot leave a DM room you are not in");
+    }
+    await socket.leave(dmId);
+  } catch (err) {
+    logSocketError(socket, err);
+  }
+};

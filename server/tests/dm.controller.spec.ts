@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { GameServer, GameServerSocket } from "../src/types.ts";
 import { logSocketError } from "../src/controllers/socket.controller.ts";
-import { socketDmJoin } from "../src/controllers/dm.controller.ts";
+import { socketDmJoin, socketDmLeave } from "../src/controllers/dm.controller.ts";
 import { DirectChatRepo, UserRepo } from "../src/repository.ts";
 import { getUserByUsername } from "../src/services/auth.service.ts";
 
@@ -19,8 +19,10 @@ const MockGameServer = vi.fn(
 const MockGameServerSocket = vi.fn(
   class {
     id = "mockGameServerSocket";
+    rooms = new Set<string>();
     join = vi.fn();
     emit = vi.fn();
+    leave = vi.fn();
     to = vi.fn(() => this);
   },
 );
@@ -87,5 +89,29 @@ describe("socketDmJoin", () => {
         messages: [],
       }),
     );
+  });
+});
+
+describe("socketDmLeave", () => {
+  it("should reject invalid auth", async () => {
+    await socketDmLeave(mockSocket, mockServer)({ auth: badAuth, payload: "someId" });
+    expect(logSocketError).toHaveBeenCalledExactlyOnceWith(mockSocket, new Error("Invalid auth"));
+  });
+
+  it("should reject leaving a room you are not in", async () => {
+    const chatId = await seedDm();
+    await socketDmLeave(mockSocket, mockServer)({ auth: auth0, payload: chatId });
+    expect(logSocketError).toHaveBeenCalledExactlyOnceWith(
+      mockSocket,
+      new Error("Cannot leave a DM room you are not in"),
+    );
+  });
+
+  it("should leave the room when already joined", async () => {
+    const chatId = await seedDm();
+    mockSocket.rooms.add(chatId);
+    await socketDmLeave(mockSocket, mockServer)({ auth: auth0, payload: chatId });
+    expect(logSocketError).not.toHaveBeenCalled();
+    expect(mockSocket.leave).toHaveBeenCalledExactlyOnceWith(chatId);
   });
 });
