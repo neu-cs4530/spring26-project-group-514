@@ -73,36 +73,41 @@ export const postRequest =
 
 /**
  * Handles responding to a friend request
+ * Emits friendRequestUpdated to the original sender's socket room.
  *
+ * @param io the Socket.io server instance used to emit the event.
  * @param req request containing auth info, requestId, and action (accepted/rejected)
  * @param res response either returning the updated friend request or an error
  */
-export const postRespond: RestAPI<FriendRequest> = async (req, res) => {
-  const body = withAuth(
-    z.object({ requestId: z.string(), action: z.enum(["accepted", "rejected"]) }),
-  ).safeParse(req.body);
-  if (body.error) {
-    res.status(400).send({ error: "Poorly-formed request" });
-    return;
-  }
+export const postRespond =
+  (io: GameServer): RestAPI<FriendRequest> =>
+  async (req, res) => {
+    const body = withAuth(
+      z.object({ requestId: z.string(), action: z.enum(["accepted", "rejected"]) }),
+    ).safeParse(req.body);
+    if (body.error) {
+      res.status(400).send({ error: "Poorly-formed request" });
+      return;
+    }
 
-  const user = await checkAuth(body.data.auth);
-  if (!user) {
-    res.status(403).send({ error: "Invalid credentials" });
-    return;
-  }
+    const user = await checkAuth(body.data.auth);
+    if (!user) {
+      res.status(403).send({ error: "Invalid credentials" });
+      return;
+    }
 
-  try {
-    const friendReq = await respondToFriendRequest(
-      user.username,
-      body.data.payload.requestId,
-      body.data.payload.action,
-    );
-    res.send(friendReq);
-  } catch (e) {
-    res.status(400).send({ error: "Bad Request" });
-  }
-};
+    try {
+      const friendReq = await respondToFriendRequest(
+        user.username,
+        body.data.payload.requestId,
+        body.data.payload.action,
+      );
+      io.to(`user:${friendReq.fromUser}`).emit("friendRequestUpdated", friendReq);
+      res.send(friendReq);
+    } catch (e) {
+      res.status(400).send({ error: "Bad Request" });
+    }
+  };
 
 /**
  * Handles removing a friend

@@ -69,7 +69,7 @@ app.use(
         .get("/list/:username", friend.getList)
         .get("/requests/:username", friend.getRequests)
         .post("/request", friend.postRequest(io))
-        .post("/respond", friend.postRespond)
+        .post("/respond", friend.postRespond(io))
         .post("/remove", friend.postRemove),
     )
     .use("/dm", express.Router().get("/list/:username", dm.getList).get("/:id", dm.getById)),
