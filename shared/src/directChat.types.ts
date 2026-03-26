@@ -25,3 +25,12 @@ export interface DirectChatSummary {
   participants: [string, string];
   createdAt: Date;
 }
+/**
+ * Payload emitted when a new message is sent in a DM conversation.
+ * - `chatId`: the ID of the DM conversation
+ * - `message`: the newly sent message
+ */
+export interface DmNewMessagePayload {
+  chatId: string;
+  message: MessageInfo;
+}

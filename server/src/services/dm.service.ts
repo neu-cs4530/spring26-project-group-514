@@ -78,3 +78,18 @@ export async function getDmById(id: string): Promise<DirectChatInfo> {
   const record = await DirectChatRepo.get(id);
   return populateDirectChatInfo(id, record);
 }
+
+/**
+ * Adds a message to a DM conversation.
+ *
+ * @param dmId - The DM conversation ID
+ * @param messageId - The message ID to append
+ * @throws If the DM ID does not exist
+ */
+export async function addMessageToDm(dmId: string, messageId: string): Promise<void> {
+  const record = await DirectChatRepo.get(dmId);
+  await DirectChatRepo.set(dmId, {
+    ...record,
+    messages: [...record.messages, messageId],
+  });
+}
