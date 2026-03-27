@@ -20,10 +20,8 @@ export default function GamePanel({
   const { user } = useLoginContext();
   const timeSince = useTimeSince();
 
-  const { view, players, userPlayerIndex, hasWatched, joinGame, startGame } = useSocketsForGame(
-    gameId,
-    initialPlayers,
-  );
+  const { view, players, scores, userPlayerIndex, hasWatched, joinGame, startGame } =
+    useSocketsForGame(gameId, initialPlayers);
 
   return hasWatched ? (
     <div className="gamePanel">
@@ -43,6 +41,21 @@ export default function GamePanel({
             </div>
           ))}
         </div>
+        {view && (
+          <div className="spacedSection">
+            <h3>Current Scores</h3>
+            <div className="dottedList" role="list">
+              {players.map((player, index) => (
+                <div className="dottedListItem" role="listitem" key={`${player.username}-score`}>
+                  <span>
+                    Player #{index + 1} (<UserLink user={player} />)
+                  </span>
+                  <strong>{scores.find((score) => score.playerIndex === index)?.score ?? 0}</strong>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         {
           // If the game hasn't started and user hasn't joined, they can join
           userPlayerIndex < 0 && !view && (

@@ -59,7 +59,9 @@ app.use(
         .post("/:id/invite", lobby.postInvite)
         .post("/:id/join", lobby.postJoin)
         .post("/:id/leave", lobby.postLeave)
+        .post("/:id/decline", lobby.postDecline)
         .post("/:id/remove", lobby.postRemove)
+        .post("/:id/settings", lobby.postSettings)
         .post("/:id/start", lobby.postStart),
     )
     .use(
@@ -97,6 +99,16 @@ io.on("connection", (socket) => {
   socket.on("dmJoin", dm.socketDmJoin(socket, io));
   socket.on("dmLeave", dm.socketDmLeave(socket, io));
   socket.on("dmSendMessage", dm.socketDmSendMessage(socket, io));
+
+  socket.on("lobbyWatch", lobby.socketWatch(socket, io));
+  socket.on("lobbyUnwatch", lobby.socketUnwatch(socket, io));
+  socket.on("lobbyJoin", lobby.socketJoin(socket, io));
+  socket.on("lobbyLeave", lobby.socketLeave(socket, io));
+  socket.on("lobbyInvitePlayer", lobby.socketInvitePlayer(socket, io));
+  socket.on("lobbyDeclineInvite", lobby.socketDeclineInvite(socket, io));
+  socket.on("lobbyRemovePlayer", lobby.socketRemovePlayer(socket, io));
+  socket.on("lobbyUpdateSettings", lobby.socketUpdateSettings(socket, io));
+  socket.on("lobbyStart", lobby.socketStart(socket, io));
 
   socket.onAny((name, payload) => {
     const zPayload = z.object({ auth: z.object({ username: z.string() }), payload: z.any() });

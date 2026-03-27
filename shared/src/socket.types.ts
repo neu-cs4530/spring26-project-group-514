@@ -16,6 +16,7 @@ import {
 import { type FriendRequest } from "./friend.types.ts";
 import { type SafeUserInfo } from "./user.types.ts";
 import { type DirectChatInfo, type DmNewMessagePayload } from "./directChat.types.ts";
+import { type LobbyInfo, type LobbySettingsPayload } from "./lobby.types.ts";
 
 /**
  * The Socket.io interface for client to server communication
@@ -32,6 +33,17 @@ export interface ClientToServerEvents {
   dmJoin: (payload: WithAuth<string>) => void;
   dmLeave: (payload: WithAuth<string>) => void;
   dmSendMessage: (payload: WithAuth<NewMessagePayload>) => void;
+  lobbyWatch: (payload: WithAuth<string>) => void;
+  lobbyUnwatch: (payload: WithAuth<string>) => void;
+  lobbyJoin: (payload: WithAuth<string>) => void;
+  lobbyLeave: (payload: WithAuth<string>) => void;
+  lobbyInvitePlayer: (payload: WithAuth<{ lobbyId: string; username: string }>) => void;
+  lobbyDeclineInvite: (payload: WithAuth<string>) => void;
+  lobbyRemovePlayer: (payload: WithAuth<{ lobbyId: string; username: string }>) => void;
+  lobbyUpdateSettings: (
+    payload: WithAuth<{ lobbyId: string; settings: LobbySettingsPayload }>,
+  ) => void;
+  lobbyStart: (payload: WithAuth<string>) => void;
 }
 
 /**
@@ -51,4 +63,6 @@ export interface ServerToClientEvents {
   gameWatched: (payload: GamePlayInfo) => void;
   dmJoined: (payload: DirectChatInfo) => void;
   dmNewMessage: (payload: DmNewMessagePayload) => void;
+  lobbyUpdated: (payload: LobbyInfo) => void;
+  lobbyStarted: (payload: { lobbyId: string; gameId: string }) => void;
 }
