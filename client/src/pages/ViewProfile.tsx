@@ -54,7 +54,8 @@ export default function ViewProfile({ username }: ViewProfileProps) {
               <li>Username: {componentState.user.username}</li>
               <li>Account created {timeSince(componentState.user.createdAt)}</li>
               <li>
-                Badges: {componentState.badges.length > 0 ? componentState.badges.join(", ") : "None yet"}
+                Badges:{" "}
+                {componentState.badges.length > 0 ? componentState.badges.join(", ") : "None yet"}
               </li>
             </ul>
           </div>

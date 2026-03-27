@@ -1,4 +1,10 @@
-import type { AchievementBadge, GameKey, GuessState, NimState, UserBadgesInfo } from "@gamenite/shared";
+import type {
+  AchievementBadge,
+  GameKey,
+  GuessState,
+  NimState,
+  UserBadgesInfo,
+} from "@gamenite/shared";
 import { GameHistoryRepo, UserRepo } from "../repository.ts";
 import type { GameHistoryRecord } from "../models.ts";
 import { getUserByUsername } from "./auth.service.ts";
@@ -29,7 +35,9 @@ function getWinningIndices(record: GameHistoryRecord): number[] {
 
     return state.guesses
       .map((guess, idx) => ({ guess, idx }))
-      .filter((entry) => entry.guess !== null && Math.abs(entry.guess - state.secret) === bestDistance)
+      .filter(
+        (entry) => entry.guess !== null && Math.abs(entry.guess - state.secret) === bestDistance,
+      )
       .map((entry) => entry.idx);
   }
 

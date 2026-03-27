@@ -7,7 +7,7 @@ const auth2 = { username: "user2", password: "pwd2222" };
 
 /**
  * lobby lifecycle integreation
- * 
+ *
  * create -> invite -> join -> start -> verify linked game and started lobby state.
  */
 describe("lobby lifecycle integration", () => {
@@ -39,7 +39,9 @@ describe("lobby lifecycle integration", () => {
     expect(game.status).toBe(200);
     expect(game.body.type).toBe("nim");
     expect(game.body.status).toBe("active");
-    const usernames = (game.body.players as { username: string }[]).map((player) => player.username);
+    const usernames = (game.body.players as { username: string }[]).map(
+      (player) => player.username,
+    );
     expect(usernames).toEqual(expect.arrayContaining(["user1", "user2"]));
 
     const lobby = await supertest(app).get(`/api/lobby/${lobbyId}`);

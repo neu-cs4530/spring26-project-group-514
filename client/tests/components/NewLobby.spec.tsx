@@ -1,9 +1,10 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import NewLobby from "../../src/pages/NewLobby.tsx";
+import type { createLobby as createLobbyFn } from "../../src/services/lobbyService.ts";
 
 const mockedUseNavigate = vi.fn();
-const mockedCreateLobby = vi.fn();
+const mockedCreateLobby = vi.fn<typeof createLobbyFn>();
 
 vi.mock("react-router-dom", async () => {
   const mod = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
@@ -15,7 +16,9 @@ vi.mock("../../src/hooks/useAuth.ts", () => ({
 }));
 
 vi.mock("../../src/services/lobbyService.ts", () => ({
-  createLobby: (...args: unknown[]) => mockedCreateLobby(...args),
+  createLobby: (
+    ...args: Parameters<typeof mockedCreateLobby>
+  ): ReturnType<typeof mockedCreateLobby> => mockedCreateLobby(...args),
 }));
 
 describe("NewLobby page", () => {
@@ -28,7 +31,7 @@ describe("NewLobby page", () => {
     render(<NewLobby />);
     fireEvent.click(screen.getByRole("button", { name: "Create" }));
 
-    expect(await screen.findByText("Please select a game type")).toBeInTheDocument();
+    expect(await screen.findByText("Please select a game type")).toBeTruthy();
     expect(mockedCreateLobby).not.toHaveBeenCalled();
   });
 

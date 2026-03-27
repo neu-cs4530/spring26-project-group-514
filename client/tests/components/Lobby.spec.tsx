@@ -87,9 +87,9 @@ describe("Lobby page", () => {
   it("renders lobby details and chat", () => {
     render(<Lobby />);
 
-    expect(screen.getByText("nim Lobby")).toBeInTheDocument();
-    expect(screen.getByText("Code: ABCD12")).toBeInTheDocument();
-    expect(screen.getByText("chat:chat-1")).toBeInTheDocument();
+    expect(screen.getByText("nim Lobby")).toBeTruthy();
+    expect(screen.getByText("Code: ABCD12")).toBeTruthy();
+    expect(screen.getByText("chat:chat-1")).toBeTruthy();
   });
 
   it("invites by username input and friend quick-invite", () => {

@@ -1,9 +1,10 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import LobbyList from "../../src/pages/LobbyList.tsx";
+import type { joinLobbyByCode as joinLobbyByCodeFn } from "../../src/services/lobbyService.ts";
 
 const mockedUseNavigate = vi.fn();
-const mockedJoinLobbyByCode = vi.fn();
+const mockedJoinLobbyByCode = vi.fn<typeof joinLobbyByCodeFn>();
 
 vi.mock("react-router-dom", async () => {
   const mod = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
@@ -23,7 +24,10 @@ vi.mock("../../src/hooks/useLobbyList.ts", () => ({
       code: "CODE99",
       createdBy: { username: "host", display: "Host", createdAt: new Date("2025-01-01") },
       players: [
-        { user: { username: "host", display: "Host", createdAt: new Date("2025-01-01") }, status: "joined" },
+        {
+          user: { username: "host", display: "Host", createdAt: new Date("2025-01-01") },
+          status: "joined",
+        },
       ],
       settings: { mode: "standard", difficulty: "normal", timerSeconds: null },
       chatId: "chat-22",
@@ -33,7 +37,9 @@ vi.mock("../../src/hooks/useLobbyList.ts", () => ({
 }));
 
 vi.mock("../../src/services/lobbyService.ts", () => ({
-  joinLobbyByCode: (...args: unknown[]) => mockedJoinLobbyByCode(...args),
+  joinLobbyByCode: (
+    ...args: Parameters<typeof mockedJoinLobbyByCode>
+  ): ReturnType<typeof mockedJoinLobbyByCode> => mockedJoinLobbyByCode(...args),
 }));
 
 describe("LobbyList page", () => {
