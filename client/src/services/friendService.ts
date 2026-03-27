@@ -67,3 +67,18 @@ export const getPendingRequests = async (username: string): APIResponse<FriendRe
     return exceptionToErrorMsg(error);
   }
 };
+
+export const removeFriendRequest = async (
+  auth: UserAuth,
+  friendUsername: string,
+): APIResponse<void> => {
+  try {
+    const res = await api.post<void | ErrorMsg>(`${FRIEND_API_URL}/remove`, {
+      auth,
+      payload: { friendUsername },
+    });
+    return res.data;
+  } catch (error) {
+    return exceptionToErrorMsg(error);
+  }
+};

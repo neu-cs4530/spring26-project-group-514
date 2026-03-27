@@ -8,6 +8,7 @@ import { getUserBadges, getUserById } from "../services/userService";
 interface ViewProfileProps {
   username: string;
 }
+
 export default function ViewProfile({ username }: ViewProfileProps) {
   const [componentState, setComponentState] = useState<
     | { type: "waiting" }
@@ -25,6 +26,18 @@ export default function ViewProfile({ username }: ViewProfileProps) {
   const incomingRequest = !("message" in incoming)
     ? incoming.find((request) => request.fromUser === username)
     : null;
+
+  const { friends } = useFriendList();
+  const { incoming, outgoing, sendRequest, acceptRequest, declineRequest } = useFriendRequests();
+
+  const isAlreadyFriend = !("message" in friends) && friends.some((f) => f.username === username);
+
+  const hasPendingOutgoing =
+    !("message" in outgoing) && outgoing.some((r) => r.toUser === username);
+
+  const incomingRequest = !("message" in incoming)
+    ? incoming.find((r) => r.fromUser === username)
+    : undefined;
 
   useEffect(() => {
     let cancel = false;
