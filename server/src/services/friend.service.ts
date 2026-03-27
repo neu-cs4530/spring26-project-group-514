@@ -66,30 +66,6 @@ export async function getPendingRequests(username: string): Promise<FriendReques
 }
 
 /**
- * Add new friend to the friend list of the two users
- *
- * @param username1 user to be added to friend list of user2
- * @param username2 user to be added to friend list of user1
- * @returns void since just updating the friend list
- *
- */
-export async function addFriend(username1: string, username2: string): Promise<void> {
-  const user1 = await getUserByUsername(username1);
-  const user2 = await getUserByUsername(username2);
-
-  if (!user1) throw new Error(`No user ${username1}`);
-  if (!user2) throw new Error(`No user ${username2}`);
-
-  const userRecord1 = await UserRepo.get(user1.userId);
-  const userRecord2 = await UserRepo.get(user2.userId);
-
-  userRecord1.friends[user2.userId] = true;
-  userRecord2.friends[user1.userId] = true;
-  await UserRepo.set(user1.userId, userRecord1);
-  await UserRepo.set(user2.userId, userRecord2);
-}
-
-/**
  * Handles sending friend request from a user to another user
  *
  * @param fromUsername username of user that sent the friend request
