@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import LobbyList from "../../src/pages/LobbyList.tsx";
 import type { joinLobbyByCode as joinLobbyByCodeFn } from "../../src/services/lobbyService.ts";
+import type { LobbyInfo } from "@gamenite/shared";
 
 const mockedUseNavigate = vi.fn();
 const mockedJoinLobbyByCode = vi.fn<typeof joinLobbyByCodeFn>();
@@ -56,7 +57,23 @@ describe("LobbyList page", () => {
   });
 
   it("joins by code and navigates to lobby", async () => {
-    mockedJoinLobbyByCode.mockResolvedValue({ lobbyId: "lobby-join" });
+    const joinedLobby: LobbyInfo = {
+      lobbyId: "lobby-join",
+      type: "guess",
+      isPrivate: true,
+      code: "ABCD12",
+      createdBy: { username: "host", display: "Host", createdAt: new Date("2025-01-01") },
+      players: [
+        {
+          user: { username: "host", display: "Host", createdAt: new Date("2025-01-01") },
+          status: "joined",
+        },
+      ],
+      settings: { mode: "standard", difficulty: "normal", timerSeconds: null },
+      chatId: "chat-join",
+      createdAt: new Date("2025-01-01"),
+    };
+    mockedJoinLobbyByCode.mockResolvedValue(joinedLobby);
     render(<LobbyList />);
 
     fireEvent.change(screen.getByLabelText("Lobby code"), { target: { value: " abcd12 " } });

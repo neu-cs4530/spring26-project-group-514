@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import NewLobby from "../../src/pages/NewLobby.tsx";
 import type { createLobby as createLobbyFn } from "../../src/services/lobbyService.ts";
+import type { LobbyInfo } from "@gamenite/shared";
 
 const mockedUseNavigate = vi.fn();
 const mockedCreateLobby = vi.fn<typeof createLobbyFn>();
@@ -36,7 +37,23 @@ describe("NewLobby page", () => {
   });
 
   it("creates a lobby and navigates to it", async () => {
-    mockedCreateLobby.mockResolvedValue({ lobbyId: "lobby-123" });
+    const createdLobby: LobbyInfo = {
+      lobbyId: "lobby-123",
+      type: "nim",
+      isPrivate: true,
+      code: "NIM123",
+      createdBy: { username: "user1", display: "User One", createdAt: new Date("2025-01-01") },
+      players: [
+        {
+          user: { username: "user1", display: "User One", createdAt: new Date("2025-01-01") },
+          status: "joined",
+        },
+      ],
+      settings: { mode: "standard", difficulty: "normal", timerSeconds: null },
+      chatId: "chat-123",
+      createdAt: new Date("2025-01-01"),
+    };
+    mockedCreateLobby.mockResolvedValue(createdLobby);
     render(<NewLobby />);
 
     fireEvent.change(screen.getByLabelText("Game selection"), { target: { value: "nim" } });
