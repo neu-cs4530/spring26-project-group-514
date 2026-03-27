@@ -30,7 +30,7 @@ export const gameServices: { [key in GameKey]: GameServicer } = {
  * - `guess`: number of submitted guesses (0 or 1 for each player)
  * - `nim`: 1 for winner and 0 for others once complete; otherwise all 0
  */
-function deriveScores(type: GameKey, state: unknown | undefined, numPlayers: number): GamePlayerScore[] {
+function deriveScores(type: GameKey, state: unknown, numPlayers: number): GamePlayerScore[] {
   const defaultScores = Array.from({ length: numPlayers }, (_, playerIndex) => ({
     playerIndex,
     score: 0,
