@@ -4,10 +4,14 @@ import {
   AuthRepo,
   ChatRepo,
   CommentRepo,
+  DirectChatRepo,
+  FriendRequestRepo,
   GameRepo,
+  LobbyRepo,
   MessageRepo,
   ThreadRepo,
   UserRepo,
+  GameHistoryRepo,
 } from "./repository.ts";
 import type { GameRecord, ThreadRecord } from "./models.ts";
 import { createChat } from "./services/chat.service.ts";
@@ -122,6 +126,10 @@ export async function resetEverythingToDefaults() {
   await ChatRepo.clear();
   await CommentRepo.clear();
   await GameRepo.clear();
+  await GameHistoryRepo.clear();
+  await LobbyRepo.clear();
+  await FriendRequestRepo.clear();
+  await DirectChatRepo.clear();
   await MessageRepo.clear();
   await ThreadRepo.clear();
   await UserRepo.clear();

@@ -19,6 +19,15 @@ export interface LobbyPlayer {
 }
 
 /**
+ * Configurable lobby settings shown before game start.
+ */
+export interface LobbySettings {
+  mode: "standard" | "casual";
+  difficulty: "normal" | "hard";
+  timerSeconds: number | null;
+}
+
+/**
  * Represents lobby information returned to clients.
  * - `lobbyId`: database key
  * - `type`: which game this lobby is for
@@ -35,6 +44,9 @@ export interface LobbyInfo {
   code: string;
   createdBy: SafeUserInfo;
   players: LobbyPlayer[];
+  settings: LobbySettings;
+  chatId: string;
+  startedGameId?: string;
   createdAt: Date;
 }
 
@@ -44,6 +56,13 @@ export type CreateLobbyPayload = z.infer<typeof zCreateLobbyPayload>;
 export const zCreateLobbyPayload = z.object({
   type: zGameKey,
   isPrivate: z.boolean(),
+});
+
+export type LobbySettingsPayload = z.infer<typeof zLobbySettingsPayload>;
+export const zLobbySettingsPayload = z.object({
+  mode: z.union([z.literal("standard"), z.literal("casual")]),
+  difficulty: z.union([z.literal("normal"), z.literal("hard")]),
+  timerSeconds: z.number().int().positive().nullable(),
 });
 
 export type InvitePlayerPayload = z.infer<typeof zInvitePlayerPayload>;
