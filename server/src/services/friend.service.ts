@@ -3,6 +3,7 @@ import { getUserByUsername } from "./auth.service.ts";
 import { populateSafeUserInfo } from "./user.service.ts";
 import { FriendRequestRepo, UserRepo } from "../repository.ts";
 import type { FriendRequestRecord } from "../models.ts";
+import { createDm, deleteDm } from "./dm.service.ts";
 
 /**
  * Parse user's friend request information to be served to the client
@@ -170,6 +171,10 @@ export async function respondToFriendRequest(
     UserRepo.set(record.toUser, toUserRec),
   ]);
 
+  if (action === "accepted") {
+    await createDm(record.fromUser, user.userId);
+  }
+
   return populateFriendRequest(requestId, record);
 }
 
@@ -205,6 +210,8 @@ export async function removeFriend(
     UserRepo.set(user.userId, userRecord),
     UserRepo.set(friend.userId, friendRecord),
   ]);
+
+  await deleteDm(user.userId, friend.userId);
 
   return populateSafeUserInfo(friend.userId);
 }
