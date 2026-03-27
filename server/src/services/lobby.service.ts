@@ -1,8 +1,19 @@
-import { type LobbyInfo, type GameKey } from "@gamenite/shared";
+import { type LobbyInfo, type GameKey, type LobbySettingsPayload } from "@gamenite/shared";
 import { type UserWithId } from "../types.ts";
 import { LobbyRepo } from "../repository.ts";
 import { populateSafeUserInfo } from "./user.service.ts";
 import { randomUUID } from "node:crypto";
+import { createChat } from "./chat.service.ts";
+
+const defaultLobbySettings: LobbySettingsPayload = {
+  mode: "standard",
+  difficulty: "normal",
+  timerSeconds: null,
+};
+
+function ensureLobbyNotStarted(startedGameId: string | undefined) {
+  if (startedGameId) throw new Error("Lobby already started");
+}
 
 /**
  * Expand a stored lobby record into a full LobbyInfo object.
@@ -15,6 +26,9 @@ async function populateLobbyInfo(lobbyId: string): Promise<LobbyInfo> {
     isPrivate: lobby.isPrivate,
     code: lobby.code,
     createdBy: await populateSafeUserInfo(lobby.createdBy),
+    settings: lobby.settings,
+    chatId: lobby.chatId,
+    startedGameId: lobby.startedGameId,
     createdAt: new Date(lobby.createdAt),
     players: await Promise.all(
       lobby.players.map(async ({ userId, status }) => ({
@@ -35,11 +49,14 @@ export async function createLobby(
   createdAt: Date,
 ): Promise<LobbyInfo> {
   const code = randomUUID().slice(0, 8).toUpperCase();
+  const chat = await createChat(createdAt);
   const lobbyId = await LobbyRepo.add({
     type,
     isPrivate,
     code,
     createdBy: user.userId,
+    settings: defaultLobbySettings,
+    chatId: chat.chatId,
     createdAt: createdAt.toISOString(),
     players: [{ userId: user.userId, status: "joined" }],
   });
@@ -74,7 +91,7 @@ export async function getPublicLobbies(): Promise<LobbyInfo[]> {
   const keys = await LobbyRepo.getAllKeys();
   const all = await Promise.all(keys.map(populateLobbyInfo));
   return all
-    .filter((lobby) => !lobby.isPrivate)
+    .filter((lobby) => !lobby.isPrivate && !lobby.startedGameId)
     .toSorted((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 }
 
@@ -89,6 +106,7 @@ export async function invitePlayer(
   const lobby = await LobbyRepo.find(lobbyId);
   if (!lobby) throw new Error(`Lobby ${lobbyId} not found`);
   if (lobby.createdBy !== inviter.userId) throw new Error(`Only the host can invite players`);
+  ensureLobbyNotStarted(lobby.startedGameId);
 
   // Find the target user
   const { UserRepo: userRepo } = await import("../repository.ts");
@@ -117,6 +135,7 @@ export async function invitePlayer(
 export async function joinLobby(lobbyId: string, user: UserWithId): Promise<LobbyInfo> {
   const lobby = await LobbyRepo.find(lobbyId);
   if (!lobby) throw new Error(`Lobby ${lobbyId} not found`);
+  ensureLobbyNotStarted(lobby.startedGameId);
 
   const playerEntry = lobby.players.find((p) => p.userId === user.userId);
   if (playerEntry) {
@@ -151,6 +170,7 @@ export async function leaveLobby(lobbyId: string, user: UserWithId): Promise<Lob
   const lobby = await LobbyRepo.find(lobbyId);
   if (!lobby) throw new Error(`Lobby ${lobbyId} not found`);
   if (lobby.createdBy === user.userId) throw new Error(`Host cannot leave their own lobby`);
+  ensureLobbyNotStarted(lobby.startedGameId);
 
   lobby.players = lobby.players.filter((p) => p.userId !== user.userId);
   await LobbyRepo.set(lobbyId, lobby);
@@ -168,6 +188,7 @@ export async function removePlayer(
   const lobby = await LobbyRepo.find(lobbyId);
   if (!lobby) throw new Error(`Lobby ${lobbyId} not found`);
   if (lobby.createdBy !== host.userId) throw new Error(`Only the host can remove players`);
+  ensureLobbyNotStarted(lobby.startedGameId);
 
   const { UserRepo: userRepo } = await import("../repository.ts");
   const allUserKeys = await userRepo.getAllKeys();
@@ -188,6 +209,40 @@ export async function removePlayer(
 }
 
 /**
+ * Decline a pending private lobby invite.
+ */
+export async function declineInvite(lobbyId: string, user: UserWithId): Promise<LobbyInfo> {
+  const lobby = await LobbyRepo.find(lobbyId);
+  if (!lobby) throw new Error(`Lobby ${lobbyId} not found`);
+  ensureLobbyNotStarted(lobby.startedGameId);
+
+  const entry = lobby.players.find((p) => p.userId === user.userId);
+  if (!entry) throw new Error("You are not invited to this lobby");
+  entry.status = "declined";
+
+  await LobbyRepo.set(lobbyId, lobby);
+  return populateLobbyInfo(lobbyId);
+}
+
+/**
+ * Update host-controlled lobby settings.
+ */
+export async function updateLobbySettings(
+  lobbyId: string,
+  host: UserWithId,
+  settings: LobbySettingsPayload,
+): Promise<LobbyInfo> {
+  const lobby = await LobbyRepo.find(lobbyId);
+  if (!lobby) throw new Error(`Lobby ${lobbyId} not found`);
+  if (lobby.createdBy !== host.userId) throw new Error("Only the host can update settings");
+  ensureLobbyNotStarted(lobby.startedGameId);
+
+  lobby.settings = settings;
+  await LobbyRepo.set(lobbyId, lobby);
+  return populateLobbyInfo(lobbyId);
+}
+
+/**
  * Start the game from a lobby (host only).
  * Returns the lobbyId and gameType so the controller can create the game.
  */
@@ -198,6 +253,7 @@ export async function startLobby(
   const lobby = await LobbyRepo.find(lobbyId);
   if (!lobby) throw new Error(`Lobby ${lobbyId} not found`);
   if (lobby.createdBy !== host.userId) throw new Error(`Only the host can start the game`);
+  ensureLobbyNotStarted(lobby.startedGameId);
 
   const joinedPlayers = lobby.players.filter((p) => p.status === "joined");
   if (joinedPlayers.length < 2) throw new Error(`Not enough players to start`);
@@ -206,4 +262,15 @@ export async function startLobby(
     type: lobby.type,
     playerIds: joinedPlayers.map((p) => p.userId),
   };
+}
+
+/**
+ * Marks a lobby as started by storing the resulting game id.
+ */
+export async function markLobbyStarted(lobbyId: string, gameId: string): Promise<LobbyInfo> {
+  const lobby = await LobbyRepo.find(lobbyId);
+  if (!lobby) throw new Error(`Lobby ${lobbyId} not found`);
+  lobby.startedGameId = gameId;
+  await LobbyRepo.set(lobbyId, lobby);
+  return populateLobbyInfo(lobbyId);
 }

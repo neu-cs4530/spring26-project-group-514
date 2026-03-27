@@ -59,7 +59,9 @@ app.use(
         .post("/:id/invite", lobby.postInvite)
         .post("/:id/join", lobby.postJoin)
         .post("/:id/leave", lobby.postLeave)
+        .post("/:id/decline", lobby.postDecline)
         .post("/:id/remove", lobby.postRemove)
+        .post("/:id/settings", lobby.postSettings)
         .post("/:id/start", lobby.postStart),
     )
     .use(
@@ -68,8 +70,8 @@ app.use(
         .Router()
         .get("/list/:username", friend.getList)
         .get("/requests/:username", friend.getRequests)
-        .post("/request", friend.postRequest)
-        .post("/respond", friend.postRespond)
+        .post("/request", friend.postRequest(io))
+        .post("/respond", friend.postRespond(io))
         .post("/remove", friend.postRemove),
     )
     .use("/dm", express.Router().get("/list/:username", dm.getList).get("/:id", dm.getById)),
@@ -91,6 +93,22 @@ io.on("connection", (socket) => {
   socket.on("gameMakeMove", game.socketMakeMove(socket, io));
   socket.on("gameStart", game.socketStart(socket, io));
   socket.on("gameWatch", game.socketWatch(socket, io));
+
+  socket.on("registerUser", user.socketRegisterUser(socket, io));
+
+  socket.on("dmJoin", dm.socketDmJoin(socket, io));
+  socket.on("dmLeave", dm.socketDmLeave(socket, io));
+  socket.on("dmSendMessage", dm.socketDmSendMessage(socket, io));
+
+  socket.on("lobbyWatch", lobby.socketWatch(socket, io));
+  socket.on("lobbyUnwatch", lobby.socketUnwatch(socket, io));
+  socket.on("lobbyJoin", lobby.socketJoin(socket, io));
+  socket.on("lobbyLeave", lobby.socketLeave(socket, io));
+  socket.on("lobbyInvitePlayer", lobby.socketInvitePlayer(socket, io));
+  socket.on("lobbyDeclineInvite", lobby.socketDeclineInvite(socket, io));
+  socket.on("lobbyRemovePlayer", lobby.socketRemovePlayer(socket, io));
+  socket.on("lobbyUpdateSettings", lobby.socketUpdateSettings(socket, io));
+  socket.on("lobbyStart", lobby.socketStart(socket, io));
 
   socket.onAny((name, payload) => {
     const zPayload = z.object({ auth: z.object({ username: z.string() }), payload: z.any() });

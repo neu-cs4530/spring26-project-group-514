@@ -78,3 +78,44 @@ export async function getDmById(id: string): Promise<DirectChatInfo> {
   const record = await DirectChatRepo.get(id);
   return populateDirectChatInfo(id, record);
 }
+
+/**
+ * Adds a message to a DM conversation.
+ *
+ * @param dmId - The DM conversation ID
+ * @param messageId - The message ID to append
+ * @throws If the DM ID does not exist
+ */
+export async function addMessageToDm(dmId: string, messageId: string): Promise<void> {
+  const record = await DirectChatRepo.get(dmId);
+  await DirectChatRepo.set(dmId, {
+    ...record,
+    messages: [...record.messages, messageId],
+  });
+}
+
+export async function createDm(userId1: string, userId2: string): Promise<string> {
+  const dmId = await DirectChatRepo.add({
+    participants: [userId1, userId2],
+    messages: [],
+    createdAt: new Date().toISOString(),
+  });
+
+  const [user1Rec, user2Rec] = await Promise.all([UserRepo.get(userId1), UserRepo.get(userId2)]);
+
+  user1Rec.directChats[userId2] = dmId;
+  user2Rec.directChats[userId1] = dmId;
+
+  await Promise.all([UserRepo.set(userId1, user1Rec), UserRepo.set(userId2, user2Rec)]);
+
+  return dmId;
+}
+
+export async function deleteDm(userId1: string, userId2: string): Promise<void> {
+  const [user1Rec, user2Rec] = await Promise.all([UserRepo.get(userId1), UserRepo.get(userId2)]);
+
+  delete user1Rec.directChats[userId2];
+  delete user2Rec.directChats[userId1];
+
+  await Promise.all([UserRepo.set(userId1, user1Rec), UserRepo.set(userId2, user2Rec)]);
+}
