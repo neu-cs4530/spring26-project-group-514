@@ -1,4 +1,4 @@
-import type { GameKey } from "@gamenite/shared";
+import type { AchievementBadge, GameKey } from "@gamenite/shared";
 
 /**
  * Record identifiers used to look up keys in a database. This type
@@ -130,6 +130,7 @@ export interface UserRecord {
   username: string; // References Auth records
   display: string;
   createdAt: DateISO;
+  badges: AchievementBadge[];
   friends: Record<RecordId, true>; // References User records
   friendInReqs: Record<RecordId, RecordId>; // References User records -> FriendRequest records
   friendOutReqs: Record<RecordId, RecordId>; // References User records -> FriendRequest records

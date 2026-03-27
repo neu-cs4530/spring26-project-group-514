@@ -13,6 +13,24 @@ export interface SafeUserInfo {
   createdAt: Date;
 }
 
+/**
+ * Achievement badges that can be earned by completing games.
+ */
+export type AchievementBadge =
+  | "first-game"
+  | "first-win"
+  | "veteran-5-games"
+  | "nim-master-3-wins"
+  | "guess-master-3-wins";
+
+/**
+ * Badge payload for user profiles.
+ */
+export interface UserBadgesInfo {
+  username: string;
+  badges: AchievementBadge[];
+}
+
 /*** TYPES USED IN THE USER API ***/
 
 /**

@@ -14,6 +14,7 @@ import { nimGameService } from "../games/nim.ts";
 import { guessGameService } from "../games/guess.ts";
 import { type GameViewUpdates, type UserWithId } from "../types.ts";
 import { GameHistoryRepo, GameRepo } from "../repository.ts";
+import { awardBadgesForCompletedGame } from "./achievement.service.ts";
 
 /**
  * The service interface for individual games
@@ -253,6 +254,7 @@ export async function updateGame(
       endedAt: new Date().toISOString(),
       state: game.state,
     });
+    await awardBadgesForCompletedGame(game.players);
   }
 
   return {

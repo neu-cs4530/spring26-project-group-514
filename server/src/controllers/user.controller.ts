@@ -1,4 +1,10 @@
-import { type SafeUserInfo, withAuth, zUserAuth, zUserUpdateRequest } from "@gamenite/shared";
+import {
+  type SafeUserInfo,
+  type UserBadgesInfo,
+  withAuth,
+  zUserAuth,
+  zUserUpdateRequest,
+} from "@gamenite/shared";
 import {
   createUser,
   getUsersByUsername,
@@ -8,6 +14,7 @@ import {
 import { type RestAPI, type SocketAPI } from "../types.ts";
 import { z } from "zod";
 import { checkAuth, getUserByUsername } from "../services/auth.service.ts";
+import { getUserBadgesByUsername } from "../services/achievement.service.ts";
 
 /**
  * Handles user login by validating credentials.
@@ -79,6 +86,20 @@ export const getByUsername: RestAPI<SafeUserInfo, { username: string }> = async 
     return;
   }
   res.send(await populateSafeUserInfo(user.userId));
+};
+
+/**
+ * Retrieves earned badges for a user by username.
+ */
+export const getBadgesByUsername: RestAPI<UserBadgesInfo, { username: string }> = async (
+  req,
+  res,
+) => {
+  try {
+    res.send(await getUserBadgesByUsername(req.params.username));
+  } catch {
+    res.status(404).send({ error: "User not found" });
+  }
 };
 
 /**

@@ -27,6 +27,20 @@ describe("GET /api/user/:id", () => {
   });
 });
 
+describe("GET /api/user/:id/badges", () => {
+  it("should 404 for nonexistent users", async () => {
+    response = await supertest(app).get(`/api/user/${randomUUID().toString()}/badges`);
+    expect(response.status).toBe(404);
+    expect(response.body).toStrictEqual({ error: "User not found" });
+  });
+
+  it("should return an empty badge list for a new seeded user", async () => {
+    response = await supertest(app).get("/api/user/user1/badges");
+    expect(response.status).toBe(200);
+    expect(response.body).toStrictEqual({ username: "user1", badges: [] });
+  });
+});
+
 describe("POST /api/user/login", () => {
   it("should return 400 on ill-formed payload", async () => {
     response = await supertest(app)

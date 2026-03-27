@@ -1,27 +1,33 @@
-import type { SafeUserInfo } from "@gamenite/shared";
+import type { AchievementBadge, SafeUserInfo } from "@gamenite/shared";
 import { useEffect, useState } from "react";
 import useTimeSince from "../hooks/useTimeSince";
-import { getUserById } from "../services/userService";
+import { getUserBadges, getUserById } from "../services/userService";
 
 interface ViewProfileProps {
   username: string;
 }
 export default function ViewProfile({ username }: ViewProfileProps) {
   const [componentState, setComponentState] = useState<
-    { type: "waiting" } | { type: "error"; msg: string } | { type: "profile"; user: SafeUserInfo }
+    | { type: "waiting" }
+    | { type: "error"; msg: string }
+    | { type: "profile"; user: SafeUserInfo; badges: AchievementBadge[] }
   >({ type: "waiting" });
   const timeSince = useTimeSince();
 
   useEffect(() => {
     let cancel = false;
 
-    getUserById(username)
-      .then((response) => {
+    Promise.all([getUserById(username), getUserBadges(username)])
+      .then(([profileResponse, badgeResponse]) => {
         if (cancel) return;
-        if ("error" in response) {
-          setComponentState({ type: "error", msg: response.error });
+        if ("error" in profileResponse) {
+          setComponentState({ type: "error", msg: profileResponse.error });
         } else {
-          setComponentState({ type: "profile", user: response });
+          setComponentState({
+            type: "profile",
+            user: profileResponse,
+            badges: "error" in badgeResponse ? [] : badgeResponse.badges,
+          });
         }
       })
       .catch((err) => {
@@ -47,6 +53,9 @@ export default function ViewProfile({ username }: ViewProfileProps) {
             <ul>
               <li>Username: {componentState.user.username}</li>
               <li>Account created {timeSince(componentState.user.createdAt)}</li>
+              <li>
+                Badges: {componentState.badges.length > 0 ? componentState.badges.join(", ") : "None yet"}
+              </li>
             </ul>
           </div>
         </>
