@@ -1,23 +1,23 @@
 import type { ErrorMsg, FriendRequest, SafeUserInfo } from "@gamenite/shared";
 import { useEffect, useState } from "react";
-import { getFriendList /*, respondToRequest*/ } from "../services/friendService.ts";
+import { getFriendList, removeFriendRequest } from "../services/friendService.ts";
 import useLoginContext from "./useLoginContext.ts";
-//import useAuth from "./useAuth.ts"; // saved for later remove friend API implementation.
+import useAuth from "./useAuth.ts";
 
 /**
  * Custom hook to get the current user's accepted friends list.
  * Also subscribes to `friendRequestUpdated` socket events so the list
  * updates in real time when a friendship is accepted or removed.
  *
- * @returns A message to display to the user (Loading... or an error), or a list of FriendSummary
+ * @returns A message to display to the user (Loading... or an error), or a list of SafeUserInfo
  *          plus a `removeFriend` callback
  */
 export default function useFriendList(): {
   friends: { message: string } | SafeUserInfo[];
-  removeFriend: (targetUsername: string) => void;
+  removeFriend: (targetUsername: string) => Promise<void>;
 } {
   const { user, socket } = useLoginContext();
-  //const auth = useAuth(); // saved for later remove friend API implementation.
+  const auth = useAuth();
   const [friends, setFriends] = useState<SafeUserInfo[] | ErrorMsg | null>(null);
 
   useEffect(() => {
@@ -44,9 +44,9 @@ export default function useFriendList(): {
     };
   }, [socket, user.username]);
 
-  const removeFriend = (targetUsername: string) => {
-    // TODO: confirm with teammate whether /respond with "rejected" is the
-    // intended remove mechanism, or if a dedicated endpoint will be added.
+  const removeFriend = async (targetUsername: string) => {
+    const result = await removeFriendRequest(auth, targetUsername);
+    if (!result || "error" in result) return;
     setFriends((prev) =>
       Array.isArray(prev) ? prev.filter((f) => f.username !== targetUsername) : prev,
     );
