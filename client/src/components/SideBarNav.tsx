@@ -44,6 +44,9 @@ export default function SideBarNav() {
       <NavLink to="/friends" className={navClass}>
         Friends
       </NavLink>
+      <NavLink to="/dm" className={navClass}>
+        Messages
+      </NavLink>
     </div>
   );
 }
