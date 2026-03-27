@@ -1,4 +1,4 @@
-import { type ChangeEvent, type SubmitEvent, useState } from "react";
+import { type ChangeEvent, type KeyboardEvent, type SubmitEvent, useState } from "react";
 
 /**
  * Custom hook to manage the state and submission of a new direct message form.
@@ -10,6 +10,7 @@ export default function useNewDirectMessageForm(handleMessageCreation: (text: st
   text: string;
   handleSubmit: (e: SubmitEvent<HTMLFormElement>) => void;
   handleInputChange: (e: ChangeEvent<HTMLTextAreaElement>) => void;
+  handleKeyDown: (e: KeyboardEvent<HTMLTextAreaElement>) => void;
 } {
   const [text, setText] = useState("");
 
@@ -25,5 +26,15 @@ export default function useNewDirectMessageForm(handleMessageCreation: (text: st
     setText(e.target.value);
   }
 
-  return { text, handleSubmit, handleInputChange };
+  function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.code === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      const trimmed = text.trim();
+      if (!trimmed) return;
+      handleMessageCreation(trimmed);
+      setText("");
+    }
+  }
+
+  return { text, handleSubmit, handleInputChange, handleKeyDown };
 }

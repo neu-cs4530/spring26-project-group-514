@@ -1,0 +1,10 @@
+form.newDirectMessage textarea {
+  width: calc(100% - 2rem);
+  margin: 1rem;
+}
+
+.newDirectMessageActions {
+  display: flex;
+  justify-content: center;
+  padding-block: 0.5rem;
+}
