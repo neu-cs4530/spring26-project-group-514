@@ -114,8 +114,14 @@ export async function createDm(userId1: string, userId2: string): Promise<string
 export async function deleteDm(userId1: string, userId2: string): Promise<void> {
   const [user1Rec, user2Rec] = await Promise.all([UserRepo.get(userId1), UserRepo.get(userId2)]);
 
+  const dmId = user1Rec.directChats[userId2];
+
   delete user1Rec.directChats[userId2];
   delete user2Rec.directChats[userId1];
 
-  await Promise.all([UserRepo.set(userId1, user1Rec), UserRepo.set(userId2, user2Rec)]);
+  await Promise.all([
+    UserRepo.set(userId1, user1Rec),
+    UserRepo.set(userId2, user2Rec),
+    DirectChatRepo.delete(dmId),
+  ]);
 }
