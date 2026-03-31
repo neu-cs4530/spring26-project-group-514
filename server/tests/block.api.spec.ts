@@ -163,3 +163,61 @@ describe("POST /api/block/block", () => {
     expect(reqsRes.body).toStrictEqual([]);
   });
 });
+
+describe("POST /api/block/unblock", () => {
+  it("should return 400 on ill-formed payload", async () => {
+    response = await supertest(app).post("/api/block/unblock").send({ bad: "data" });
+    expect(response.status).toBe(400);
+  });
+
+  it("should return 403 for invalid credentials", async () => {
+    response = await supertest(app)
+      .post("/api/block/unblock")
+      .send({
+        auth: { username: "user0", password: "wrong" },
+        payload: { blockedUsername: "user1" },
+      });
+    expect(response.status).toBe(403);
+  });
+
+  it("should return 400 when unblocking self", async () => {
+    response = await supertest(app)
+      .post("/api/block/unblock")
+      .send({ auth: auth0, payload: { blockedUsername: "user0" } });
+    expect(response.status).toBe(400);
+  });
+
+  it("should return 400 for nonexistent user", async () => {
+    response = await supertest(app)
+      .post("/api/block/unblock")
+      .send({ auth: auth0, payload: { blockedUsername: "nonexistent" } });
+    expect(response.status).toBe(400);
+  });
+
+  it("should return 400 when user is not blocked", async () => {
+    response = await supertest(app)
+      .post("/api/block/unblock")
+      .send({ auth: auth0, payload: { blockedUsername: "user1" } });
+    expect(response.status).toBe(400);
+  });
+
+  it("should unblock a user successfully", async () => {
+    // Block first
+    await supertest(app)
+      .post("/api/block/block")
+      .send({ auth: auth0, payload: { blockedUsername: "user1" } });
+
+    // Unblock
+    response = await supertest(app)
+      .post("/api/block/unblock")
+      .send({ auth: auth0, payload: { blockedUsername: "user1" } });
+    expect(response.status).toBe(200);
+    expect(response.body).toStrictEqual(expect.objectContaining({ username: "user1" }));
+
+    // Verify: blocking again should succeed (proves unblock worked)
+    response = await supertest(app)
+      .post("/api/block/block")
+      .send({ auth: auth0, payload: { blockedUsername: "user1" } });
+    expect(response.status).toBe(200);
+  });
+});

@@ -72,3 +72,34 @@ export async function blockUser(
 
   return populateSafeUserInfo(blocked.userId);
 }
+
+/**
+ * Unblocks a previously blocked user.
+ * Does NOT restore friendship or DMs — those were destroyed on block.
+ *
+ * @param blockerUsername - the user performing the unblock
+ * @param blockedUsername - the user being unblocked
+ * @returns SafeUserInfo of the unblocked user
+ */
+export async function unblockUser(
+  blockerUsername: string,
+  blockedUsername: string,
+): Promise<SafeUserInfo> {
+  if (blockerUsername === blockedUsername) throw new Error("Cannot unblock yourself");
+
+  const blocker = await getUserByUsername(blockerUsername);
+  const blocked = await getUserByUsername(blockedUsername);
+
+  if (!blocker) throw new Error(`No user ${blockerUsername}`);
+  if (!blocked) throw new Error(`No user ${blockedUsername}`);
+
+  const blockerRec = await UserRepo.get(blocker.userId);
+
+  if (!(blocked.userId in blockerRec.blocked)) throw new Error("User not blocked");
+
+  delete blockerRec.blocked[blocked.userId];
+
+  await UserRepo.set(blocker.userId, blockerRec);
+
+  return populateSafeUserInfo(blocked.userId);
+}

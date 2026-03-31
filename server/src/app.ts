@@ -74,7 +74,10 @@ app.use(
         .post("/remove", friend.postRemove),
     )
     .use("/dm", express.Router().get("/list/:username", dm.getList).get("/:id", dm.getById))
-    .use("/block", express.Router().post("/block", block.postBlock)),
+    .use(
+      "/block",
+      express.Router().post("/block", block.postBlock).post("/unblock", block.postUnblock),
+    ),
 );
 
 io.on("connection", (socket) => {
