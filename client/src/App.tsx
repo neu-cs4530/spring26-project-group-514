@@ -20,8 +20,13 @@ import fallback from "./fallback.tsx";
 import NewThread from "./pages/NewThread.tsx";
 import TimeContextKeeper from "./components/UpdatingTimeContext.tsx";
 import Friends from "./pages/Friends.tsx";
+import DirectChatList from "./pages/DirectChatList.tsx";
+import DirectChatPage from "./pages/DirectChatPage.tsx";
+import LobbyList from "./pages/LobbyList.tsx";
+import NewLobby from "./pages/NewLobby.tsx";
+import Lobby from "./pages/Lobby.tsx";
 
-/** If `true`, all incoming socket messages will be logged */
+/** If this is set to `true`, all incoming socket messages will be logged */
 const DEBUG_SOCKETS = false;
 
 /**
@@ -67,6 +72,11 @@ export default function App() {
             <Route path="/forum/post/new" element={<NewThread />} />
             <Route path="/forum/post/:threadId" element={<ThreadPage />} />
             <Route path="/friends" element={<Friends />} />
+            <Route path="/dm" element={<DirectChatList />} />
+            <Route path="/dm/:chatId" element={<DirectChatPage />} />
+            <Route path="/lobbies" element={<LobbyList />} />
+            <Route path="/lobby/new" element={<NewLobby />} />
+            <Route path="/lobby/:lobbyId" element={<Lobby />} />
             <Route path="/games" element={<GameList />} />
             <Route path="/game/new" element={<NewGame />} />
             <Route path="/game/:gameId" element={<Game />} />

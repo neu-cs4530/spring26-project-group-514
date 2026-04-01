@@ -181,5 +181,12 @@ export interface LobbyRecord {
   code: string;
   createdBy: RecordId;
   players: { userId: RecordId; status: "pending" | "joined" | "declined" }[];
+  settings: {
+    mode: "standard" | "casual";
+    difficulty: "normal" | "hard";
+    timerSeconds: number | null;
+  };
+  chatId: RecordId; // References Chat records
+  startedGameId?: RecordId; // References Game records
   createdAt: DateISO;
 }

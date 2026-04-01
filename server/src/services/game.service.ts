@@ -1,4 +1,12 @@
-import { type GameInfo, type GameKey, type TaggedGameView } from "@gamenite/shared";
+import {
+  type GameInfo,
+  type GameKey,
+  type GamePlayerScore,
+  type GameScoresPayload,
+  type GuessState,
+  type NimState,
+  type TaggedGameView,
+} from "@gamenite/shared";
 import { createChat } from "./chat.service.ts";
 import { populateSafeUserInfo } from "./user.service.ts";
 import { type GameServicer } from "../games/gameServiceManager.ts";
@@ -14,6 +22,42 @@ export const gameServices: { [key in GameKey]: GameServicer } = {
   nim: nimGameService,
   guess: guessGameService,
 };
+
+/**
+ * Derive current scores from the active game state.
+ *
+ * Score semantics are game-specific:
+ * - `guess`: number of submitted guesses (0 or 1 for each player)
+ * - `nim`: 1 for winner and 0 for others once complete; otherwise all 0
+ */
+function deriveScores(type: GameKey, state: unknown, numPlayers: number): GamePlayerScore[] {
+  const defaultScores = Array.from({ length: numPlayers }, (_, playerIndex) => ({
+    playerIndex,
+    score: 0,
+  }));
+
+  if (!state) return defaultScores;
+
+  if (type === "guess") {
+    const guessState = state as GuessState;
+    return guessState.guesses.map((guess, playerIndex) => ({
+      playerIndex,
+      score: guess === null ? 0 : 1,
+    }));
+  }
+
+  if (type === "nim") {
+    const nimState = state as NimState;
+    if (nimState.remaining > 0) return defaultScores;
+
+    return defaultScores.map((entry) => ({
+      ...entry,
+      score: entry.playerIndex === nimState.nextPlayer ? 1 : 0,
+    }));
+  }
+
+  return defaultScores;
+}
 
 /**
  * Expand a stored game
@@ -143,6 +187,23 @@ export async function getGames(): Promise<GameInfo[]> {
   const unsorted = await Promise.all(keys.map(populateGameInfo));
 
   return unsorted.toSorted((game1, game2) => game2.createdAt.getTime() - game1.createdAt.getTime());
+}
+
+/**
+ * Get current in-game scores for all players in a game.
+ *
+ * @param gameId - Ostensible game id
+ * @returns the score payload for socket broadcast
+ * @throws if the game id is not valid
+ */
+export async function getGameScores(gameId: string): Promise<GameScoresPayload> {
+  const game = await GameRepo.find(gameId);
+  if (!game) throw new Error(`scores requested for invalid game ${gameId}`);
+
+  return {
+    gameId,
+    scores: deriveScores(game.type, game.state, game.players.length),
+  };
 }
 
 /**
