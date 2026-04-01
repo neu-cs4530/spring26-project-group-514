@@ -103,3 +103,20 @@ export async function unblockUser(
 
   return populateSafeUserInfo(blocked.userId);
 }
+
+/**
+ * Retrieves a block list of a user
+ *
+ * @param username user to get the block list from
+ * @returns the block list of the user
+ * @throws if user does not exist
+ */
+export async function getBlockList(username: string): Promise<SafeUserInfo[]> {
+  const user = await getUserByUsername(username);
+  if (!user) throw new Error(`No user ${username}`);
+
+  const userRecord = await UserRepo.get(user.userId);
+
+  const blockedIds = Object.keys(userRecord.blocked);
+  return Promise.all(blockedIds.map((id) => populateSafeUserInfo(id)));
+}

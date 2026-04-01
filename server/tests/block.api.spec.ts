@@ -221,3 +221,56 @@ describe("POST /api/block/unblock", () => {
     expect(response.status).toBe(200);
   });
 });
+
+describe("GET /api/block/list/:username", () => {
+  it("should return 400 when missing password header", async () => {
+    response = await supertest(app).get("/api/block/list/user0");
+    expect(response.status).toBe(400);
+  });
+
+  it("should return 401 for invalid credentials", async () => {
+    response = await supertest(app).get("/api/block/list/user0").set("x-password", "wrong");
+    expect(response.status).toBe(401);
+  });
+
+  it("should return empty list when no users blocked", async () => {
+    response = await supertest(app).get("/api/block/list/user3").set("x-password", "pwd3333");
+    expect(response.status).toBe(200);
+    expect(response.body).toStrictEqual([]);
+  });
+
+  it("should return blocked users after blocking", async () => {
+    await supertest(app)
+      .post("/api/block/block")
+      .send({ auth: auth0, payload: { blockedUsername: "user1" } });
+    await supertest(app)
+      .post("/api/block/block")
+      .send({ auth: auth0, payload: { blockedUsername: "user2" } });
+
+    response = await supertest(app).get("/api/block/list/user0").set("x-password", auth0.password);
+    expect(response.status).toBe(200);
+
+    const usernames = (response.body as { username: string }[]).map((u) => u.username);
+    expect(usernames).toContain("user1");
+    expect(usernames).toContain("user2");
+  });
+
+  it("should reflect unblock in the list", async () => {
+    await supertest(app)
+      .post("/api/block/block")
+      .send({ auth: auth0, payload: { blockedUsername: "user1" } });
+    await supertest(app)
+      .post("/api/block/unblock")
+      .send({ auth: auth0, payload: { blockedUsername: "user1" } });
+    await supertest(app)
+      .post("/api/block/block")
+      .send({ auth: auth0, payload: { blockedUsername: "user2" } });
+
+    response = await supertest(app).get("/api/block/list/user0").set("x-password", auth0.password);
+    expect(response.status).toBe(200);
+
+    const usernames = (response.body as { username: string }[]).map((u) => u.username);
+    expect(usernames).not.toContain("user1");
+    expect(usernames).toContain("user2");
+  });
+});

@@ -1,5 +1,5 @@
 import { withAuth, type SafeUserInfo } from "@gamenite/shared";
-import { blockUser, unblockUser } from "../services/block.service.ts";
+import { blockUser, getBlockList, unblockUser } from "../services/block.service.ts";
 import { type RestAPI } from "../types.ts";
 import { z } from "zod";
 import { checkAuth } from "../services/auth.service.ts";
@@ -52,5 +52,31 @@ export const postUnblock: RestAPI<SafeUserInfo> = async (req, res) => {
     res.send(unblocked);
   } catch (e) {
     res.status(400).send({ error: "Bad Request" });
+  }
+};
+
+/**
+ * GET /api/block/list/:username
+ * Returns the caller's block list as SafeUserInfo[].
+ * Requires x-password header for authentication.
+ */
+export const getList: RestAPI<SafeUserInfo[], { username: string }> = async (req, res) => {
+  const password = req.headers["x-password"];
+  if (typeof password !== "string") {
+    res.status(400).send({ error: "Missing password header" });
+    return;
+  }
+
+  const user = await checkAuth({ username: req.params.username, password });
+  if (!user) {
+    res.status(401).send({ error: "Invalid credentials" });
+    return;
+  }
+
+  try {
+    const list = await getBlockList(req.params.username);
+    res.send(list);
+  } catch {
+    res.status(404).send({ error: "User not found" });
   }
 };

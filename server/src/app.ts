@@ -76,7 +76,11 @@ app.use(
     .use("/dm", express.Router().get("/list/:username", dm.getList).get("/:id", dm.getById))
     .use(
       "/block",
-      express.Router().post("/block", block.postBlock).post("/unblock", block.postUnblock),
+      express
+        .Router()
+        .post("/block", block.postBlock)
+        .post("/unblock", block.postUnblock)
+        .get("/list/:username", block.getList),
     ),
 );
 
