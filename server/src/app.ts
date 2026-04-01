@@ -11,6 +11,7 @@ import * as thread from "./controllers/thread.controller.ts";
 import * as lobby from "./controllers/lobby.controller.ts";
 import * as friend from "./controllers/friend.controller.ts";
 import * as dm from "./controllers/dm.controller.ts";
+import * as stats from "./controllers/stats.controller.ts";
 import { type GameServer } from "./types.ts";
 
 export const app = express();
@@ -74,7 +75,17 @@ app.use(
         .post("/respond", friend.postRespond(io))
         .post("/remove", friend.postRemove),
     )
-    .use("/dm", express.Router().get("/list/:username", dm.getList).get("/:id", dm.getById)),
+    .use("/dm", express.Router().get("/list/:username", dm.getList).get("/:id", dm.getById))
+    .use(
+      "/stats",
+      express
+        .Router()
+        .get("/player/:username", stats.getPlayerStatsHandler)
+        .get("/history/:username", stats.getMatchHistoryHandler)
+        .get("/leaderboard", stats.getLeaderboardHandler)
+        .post("/leaderboard-opt-out", stats.postLeaderboardOptOut)
+        .get("/leaderboard-opt-out/:username", stats.getLeaderboardOptOutHandler),
+    ),
 );
 
 io.on("connection", (socket) => {

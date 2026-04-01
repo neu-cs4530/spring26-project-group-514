@@ -173,6 +173,28 @@ export interface DirectChatRecord {
  * - `players`: list of players and their invite statuses
  * - `createdAt`: when the lobby was created
  */
+/**
+ * Represents a player's aggregated stats in the database.
+ * - `userId`: the user ID
+ * - `username`: the username for display
+ * - `wins`: total number of wins
+ * - `losses`: total number of losses
+ * - `gamesPlayed`: total games played
+ * - `winRate`: precomputed win rate (0-1)
+ * - `leaderboardOptOut`: whether the user has opted out of the public leaderboard
+ * - `lastPlayedAt`: when the user last completed a game
+ */
+export interface PlayerStatsRecord {
+  userId: RecordId;
+  username: string;
+  wins: number;
+  losses: number;
+  gamesPlayed: number;
+  winRate: number;
+  leaderboardOptOut: boolean;
+  lastPlayedAt: DateISO;
+}
+
 export interface LobbyRecord {
   type: GameKey;
   isPrivate: boolean;

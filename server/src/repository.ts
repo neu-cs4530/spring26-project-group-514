@@ -11,6 +11,7 @@ import type {
   GameHistoryRecord,
   FriendRequestRecord,
   DirectChatRecord,
+  PlayerStatsRecord,
 } from "./models.ts";
 
 export const AuthRepo = createRepo<AuthRecord>("auth");
@@ -24,3 +25,4 @@ export const LobbyRepo = createRepo<LobbyRecord>("lobby");
 export const GameHistoryRepo = createRepo<GameHistoryRecord>("gameHistory");
 export const FriendRequestRepo = createRepo<FriendRequestRecord>("friendRequest");
 export const DirectChatRepo = createRepo<DirectChatRecord>("directChat");
+export const PlayerStatsRepo = createRepo<PlayerStatsRecord>("playerStats");
