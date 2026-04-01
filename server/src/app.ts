@@ -80,8 +80,8 @@ app.use(
       "/block",
       express
         .Router()
-        .post("/block", block.postBlock)
-        .post("/unblock", block.postUnblock)
+        .post("/block", block.postBlock(io))
+        .post("/unblock", block.postUnblock(io))
         .get("/list/:username", block.getList),
     ),
 );
