@@ -145,12 +145,10 @@ describe("POST /api/block/block", () => {
   });
 
   it("should cancel pending incoming friend request when blocking", async () => {
-    // user2 sends request to user0
     await supertest(app)
       .post("/api/friend/request")
       .send({ auth: auth2, payload: { toUsername: "user0" } });
 
-    // user0 blocks user2
     await supertest(app)
       .post("/api/block/block")
       .send({ auth: auth0, payload: { blockedUsername: "user2" } });
@@ -161,6 +159,22 @@ describe("POST /api/block/block", () => {
 
     reqsRes = await supertest(app).get("/api/friend/requests/user2");
     expect(reqsRes.body).toStrictEqual([]);
+  });
+
+  it("cannot accept friend request after blocked", async () => {
+    const friendReq = await supertest(app)
+      .post("/api/friend/request")
+      .send({ auth: auth2, payload: { toUsername: "user0" } });
+
+    await supertest(app)
+      .post("/api/block/block")
+      .send({ auth: auth0, payload: { blockedUsername: "user2" } });
+
+    response = await supertest(app)
+      .post("/api/friend/respond")
+      .send({ auth: auth2, payload: { requestId: friendReq.body.id, action: "accepted" } });
+
+    expect(response.status).toBe(400);
   });
 });
 
@@ -272,5 +286,47 @@ describe("GET /api/block/list/:username", () => {
     const usernames = (response.body as { username: string }[]).map((u) => u.username);
     expect(usernames).not.toContain("user1");
     expect(usernames).toContain("user2");
+  });
+});
+
+describe("Friend request blocking", () => {
+  it("should reject friend request from blocked user to blocker", async () => {
+    await supertest(app)
+      .post("/api/block/block")
+      .send({ auth: auth0, payload: { blockedUsername: "user1" } });
+
+    response = await supertest(app)
+      .post("/api/friend/request")
+      .send({ auth: auth1, payload: { toUsername: "user0" } });
+    expect(response.status).toBe(400);
+  });
+
+  it("should reject friend request from blocker to blocked user", async () => {
+    await supertest(app)
+      .post("/api/block/block")
+      .send({ auth: auth0, payload: { blockedUsername: "user1" } });
+
+    response = await supertest(app)
+      .post("/api/friend/request")
+      .send({ auth: auth0, payload: { toUsername: "user1" } });
+    expect(response.status).toBe(400);
+  });
+
+  it("should allow friend request after unblocking", async () => {
+    await supertest(app)
+      .post("/api/block/block")
+      .send({ auth: auth0, payload: { blockedUsername: "user1" } });
+    response = await supertest(app)
+      .post("/api/friend/request")
+      .send({ auth: auth1, payload: { toUsername: "user0" } });
+
+    expect(response.status).toBe(400);
+    await supertest(app)
+      .post("/api/block/unblock")
+      .send({ auth: auth0, payload: { blockedUsername: "user1" } });
+    response = await supertest(app)
+      .post("/api/friend/request")
+      .send({ auth: auth0, payload: { toUsername: "user1" } });
+    expect(response.status).toBe(200);
   });
 });

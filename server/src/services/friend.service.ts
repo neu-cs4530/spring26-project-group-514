@@ -92,6 +92,9 @@ export async function sendFriendRequest(
   if (toUser.userId in fromUserRec.friendOutReqs || toUser.userId in fromUserRec.friendInReqs)
     throw new Error(`Friend request already pending`);
 
+  if (toUser.userId in fromUserRec.blocked || fromUser.userId in toUserRec.blocked)
+    throw new Error(`Cannot send friend request due to block`);
+
   const id = await FriendRequestRepo.add({
     fromUser: fromUser.userId,
     toUser: toUser.userId,
