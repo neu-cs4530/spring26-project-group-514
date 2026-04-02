@@ -4,6 +4,9 @@ import useTimeSince from "../hooks/useTimeSince";
 import { getUserById } from "../services/userService";
 import useFriendList from "../hooks/useFriendList.ts";
 import useFriendRequests from "../hooks/useFriendRequests.ts";
+import useBlockList from "../hooks/useBlockList.ts";
+import ConfirmModal from "../components/ConfirmModal";
+import "./ViewProfile.css";
 
 interface ViewProfileProps {
   username: string;
@@ -13,8 +16,11 @@ export default function ViewProfile({ username }: ViewProfileProps) {
   const [componentState, setComponentState] = useState<
     { type: "waiting" } | { type: "error"; msg: string } | { type: "profile"; user: SafeUserInfo }
   >({ type: "waiting" });
-  const [requestStatus, setRequestStatus] = useState<string | null>(null);
+  const [showBlockConfirm, setShowBlockConfirm] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
   const timeSince = useTimeSince();
+  const { blockedSet, blockUser, unblockUser } = useBlockList();
+  const isBlocked = blockedSet.has(username);
 
   const { friends } = useFriendList();
   const { incoming, outgoing, sendRequest, acceptRequest, declineRequest } = useFriendRequests();
@@ -27,6 +33,21 @@ export default function ViewProfile({ username }: ViewProfileProps) {
   const incomingRequest = !("message" in incoming)
     ? incoming.find((r) => r.fromUser === username)
     : undefined;
+
+  const [sending, setSending] = useState(false);
+  const requestStatus = isAlreadyFriend
+    ? "friends"
+    : hasPendingOutgoing
+      ? "sent"
+      : incomingRequest
+        ? "incoming"
+        : "idle";
+
+  useEffect(() => {
+    if (!actionError) return;
+    const timer = setTimeout(() => setActionError(null), 4000);
+    return () => clearTimeout(timer);
+  }, [actionError]);
 
   useEffect(() => {
     let cancel = false;
@@ -51,56 +72,117 @@ export default function ViewProfile({ username }: ViewProfileProps) {
   }, [username]);
 
   async function handleSendFriendRequest() {
-    setRequestStatus(null);
-    await sendRequest(username);
-    setRequestStatus("Friend request sent!");
+    setSending(true);
+    const error = await sendRequest(username);
+    setSending(false);
+    if (error) setActionError(error);
   }
 
   async function handleAccept(requestId: string) {
-    await acceptRequest(requestId);
-    setRequestStatus("Friend request accepted!");
+    const error = await acceptRequest(requestId);
+    if (error) setActionError(error);
   }
 
   async function handleDecline(requestId: string) {
-    await declineRequest(requestId);
-    setRequestStatus("Friend request declined.");
+    const error = await declineRequest(requestId);
+    if (error) setActionError(error);
+  }
+
+  async function handleToggleBlock() {
+    if (isBlocked) {
+      const error = await unblockUser(username);
+      if (error) setActionError(error);
+    } else {
+      setShowBlockConfirm(true);
+    }
+  }
+
+  async function handleConfirmBlock() {
+    setShowBlockConfirm(false);
+    const error = await blockUser(username);
+    if (error) setActionError(error);
   }
 
   function renderFriendAction() {
-    if (isAlreadyFriend) {
-      return <div className="smallAndGray">Already friends</div>;
+    if (isBlocked) {
+      return <div style={{ color: "blocked-label" }}>Blocked</div>;
     }
-    if (hasPendingOutgoing) {
-      return <div className="smallAndGray">Friend request pending...</div>;
-    }
-    if (incomingRequest) {
+    if (sending) {
       return (
-        <div>
-          <div className="smallAndGray">This user sent you a friend request.</div>
-          <button className="primary narrow" onClick={() => handleAccept(incomingRequest.id)}>
-            Accept
-          </button>
-          <button className="secondary narrow" onClick={() => handleDecline(incomingRequest.id)}>
-            Decline
-          </button>
-        </div>
+        <button className="secondary narrow" disabled>
+          Sending...
+        </button>
       );
     }
-    return (
-      <button className="primary narrow" onClick={handleSendFriendRequest}>
-        Send Friend Request
-      </button>
-    );
+    switch (requestStatus) {
+      case "friends":
+        return (
+          <button className="outline-success narrow" disabled>
+            Friends
+          </button>
+        );
+      case "incoming":
+        return (
+          <div>
+            <div className="smallAndGray">This user sent you a friend request.</div>
+            <button className="primary narrow" onClick={() => handleAccept(incomingRequest!.id)}>
+              Accept
+            </button>
+            <button className="secondary narrow" onClick={() => handleDecline(incomingRequest!.id)}>
+              Decline
+            </button>
+          </div>
+        );
+      case "sent":
+        return (
+          <button className="outline-primary narrow" disabled>
+            Request Sent
+          </button>
+        );
+      default:
+        return (
+          <button className="primary narrow" onClick={handleSendFriendRequest}>
+            Add Friend
+          </button>
+        );
+    }
   }
 
   switch (componentState.type) {
     case "error":
-      return <div style={{ color: "#f00" }}>{componentState.msg}</div>;
+      return (
+        <div className="profile-page">
+          <div style={{ color: "error-text" }}>{componentState.msg}</div>
+        </div>
+      );
     case "waiting":
-      return <div>Loading...</div>;
+      return (
+        <div className="profile-page">
+          <div>Loading...</div>
+        </div>
+      );
     case "profile":
       return (
-        <>
+        <div className="profile-page">
+          {showBlockConfirm && (
+            <ConfirmModal
+              message={`Blocking will remove existing friendship, friend request, and DM messages.\nAre you sure you want to block ${username}?`}
+              confirmLabel="Yes, Block"
+              cancelLabel="No"
+              onConfirm={handleConfirmBlock}
+              onCancel={() => setShowBlockConfirm(false)}
+            />
+          )}
+          {actionError && <div className="action-error-banner">{actionError}</div>}
+          <div className="profile-actions">
+            <div>{renderFriendAction()}</div>
+            <button
+              className={isBlocked ? "outline narrow" : "danger narrow"}
+              onClick={handleToggleBlock}
+            >
+              {isBlocked ? "Unblock" : "Block"}
+            </button>
+          </div>
           <h2>Profile for {componentState.user.display}</h2>
           <div>
             <ul>
@@ -108,11 +190,7 @@ export default function ViewProfile({ username }: ViewProfileProps) {
               <li>Account created {timeSince(componentState.user.createdAt)}</li>
             </ul>
           </div>
-          <div>
-            {renderFriendAction()}
-            {requestStatus && <div className="smallAndGray">{requestStatus}</div>}
-          </div>
-        </>
+        </div>
       );
   }
 }

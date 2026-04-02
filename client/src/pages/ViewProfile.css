@@ -1,0 +1,68 @@
+.profile-page {
+  padding: 1.5rem;
+}
+
+.danger {
+  background-color: #dc3545;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+
+.danger:hover {
+  background-color: #b02a37;
+}
+
+.profile-page .outline {
+  background-color: transparent;
+  color: #6c757d;
+  border: 1px solid #6c757d;
+  cursor: pointer;
+}
+
+.profile-page .outline:hover {
+  background-color: #6c757d;
+  color: #fff;
+}
+
+
+.profile-actions {
+  position: absolute;
+  top: 1.5rem;
+  right: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.3rem;
+}
+
+.profile-page {
+  position: relative;
+}
+
+.action-error-banner {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  background: #fee2e2;
+  border: 1px solid black;
+  padding: 8px 12px;
+  border-radius: 4px;
+  animation: fadeOut 4s forwards;
+}
+  
+@keyframes fadeOut {                                                                                                                        
+  0%, 70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.blocked-label {
+  color: red;
+  font-weight: bold;
+}                                                                                                                                           
+  
+.error-text {                                                                                                                               
+  color: red;   
+}

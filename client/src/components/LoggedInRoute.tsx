@@ -26,12 +26,18 @@ export default function LoggedInRoute({ auth, socket, children }: LoggedInRouteP
   // arrays will change every time the app updates.
   const context = useMemo(() => (auth && socket ? { ...auth, socket } : null), [auth, socket]);
   useEffect(() => {
-    if (auth && socket) {
+    if (!auth || !socket) return;
+    const register = () => {
       socket.emit("registerUser", {
         auth: { username: auth.user.username, password: auth.pass },
         payload: null,
       });
-    }
+    };
+    register();
+    socket.on("connect", register);
+    return () => {
+      socket.off("connect", register);
+    };
   }, [auth, socket]);
   return context ? (
     <LoginContext.Provider value={context}>{children}</LoginContext.Provider>

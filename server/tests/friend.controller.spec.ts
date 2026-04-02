@@ -82,8 +82,9 @@ describe("postRespond socket emission", () => {
     expect(res.send).toHaveBeenCalledWith(
       expect.objectContaining({ fromUser: "user0", toUser: "user1", status: "accepted" }),
     );
-    expect(mockIo.to).toHaveBeenCalledExactlyOnceWith("user:user0");
-    expect(mockIo.emit).toHaveBeenCalledExactlyOnceWith(
+    expect(mockIo.to).toHaveBeenCalledWith("user:user0");
+    expect(mockIo.to).toHaveBeenCalledWith("user:user1");
+    expect(mockIo.emit).toHaveBeenCalledWith(
       "friendRequestUpdated",
       expect.objectContaining({ fromUser: "user0", toUser: "user1", status: "accepted" }),
     );
@@ -106,10 +107,12 @@ describe("postRespond socket emission", () => {
     await postRespond(mockIo)(req, res);
 
     expect(res.send).toHaveBeenCalledWith(expect.objectContaining({ status: "rejected" }));
-    expect(mockIo.to).toHaveBeenCalledExactlyOnceWith("user:user0");
-    expect(mockIo.emit).toHaveBeenCalledExactlyOnceWith(
+
+    expect(mockIo.to).toHaveBeenCalledWith("user:user0");
+    expect(mockIo.to).toHaveBeenCalledWith("user:user1");
+    expect(mockIo.emit).toHaveBeenCalledWith(
       "friendRequestUpdated",
-      expect.objectContaining({ status: "rejected" }),
+      expect.objectContaining({ fromUser: "user0", toUser: "user1", status: "rejected" }),
     );
   });
 

@@ -31,6 +31,7 @@ export const postBlock =
       const blocked = await blockUser(user.username, body.data.payload.blockedUsername);
       const blockerInfo = await populateSafeUserInfo(user.userId);
       io.to(`user:${body.data.payload.blockedUsername}`).emit("userBlocked", blockerInfo);
+      io.to(`user:${user.username}`).emit("userBlocked", blocked);
       res.send(blocked);
     } catch (e) {
       res.status(400).send({ error: "Bad Request" });

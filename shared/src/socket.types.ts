@@ -67,4 +67,5 @@ export interface ServerToClientEvents {
   lobbyStarted: (payload: { lobbyId: string; gameId: string }) => void;
   userBlocked: (payload: SafeUserInfo) => void;
   userUnblocked: (payload: SafeUserInfo) => void;
+  friendRemoved: (removedBy: SafeUserInfo) => void;
 }

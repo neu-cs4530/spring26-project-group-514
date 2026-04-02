@@ -37,10 +37,15 @@ describe("postBlock socket emission", () => {
     await postBlock(mockIo)(req, res);
 
     expect(res.send).toHaveBeenCalledWith(expect.objectContaining({ username: "user1" }));
-    expect(mockIo.to).toHaveBeenCalledExactlyOnceWith("user:user1");
-    expect(mockIo.emit).toHaveBeenCalledExactlyOnceWith(
+    expect(mockIo.to).toHaveBeenCalledWith("user:user1");
+    expect(mockIo.to).toHaveBeenCalledWith("user:user0");
+    expect(mockIo.emit).toHaveBeenCalledWith(
       "userBlocked",
       expect.objectContaining({ username: "user0" }),
+    );
+    expect(mockIo.emit).toHaveBeenCalledWith(
+      "userBlocked",
+      expect.objectContaining({ username: "user1" }),
     );
   });
 

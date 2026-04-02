@@ -11,7 +11,6 @@ export default function FriendRequestView({
   direction,
   onAccept,
   onDecline,
-  onCancel,
 }: {
   request: FriendRequest;
   direction: "incoming" | "outgoing";
@@ -40,9 +39,6 @@ export default function FriendRequestView({
       ) : (
         <div>
           <span className="smallAndGray">Pending...</span>
-          <button className="secondary narrow" onClick={() => onCancel?.(request.id)}>
-            Cancel
-          </button>
         </div>
       )}
     </div>

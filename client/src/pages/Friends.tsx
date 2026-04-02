@@ -3,11 +3,13 @@ import useFriendRequests from "../hooks/useFriendRequests.ts";
 import FriendSummaryView from "../components/FriendSummaryView.tsx";
 import FriendRequestView from "../components/FriendRequestView.tsx";
 import AddFriendForm from "../components/AddFriendForm.tsx";
+import useBlockList from "../hooks/useBlockList.ts";
+import UserLink from "../components/UserLink.tsx";
 
 export default function Friends() {
   const { friends, removeFriend } = useFriendList();
-  const { incoming, outgoing, sendRequest, acceptRequest, declineRequest, cancelRequest } =
-    useFriendRequests();
+  const { incoming, outgoing, sendRequest, acceptRequest, declineRequest } = useFriendRequests();
+  const { blockedUsers, blockError } = useBlockList();
 
   return (
     <div className="content">
@@ -52,12 +54,24 @@ export default function Friends() {
         ) : (
           <div className="dottedList" role="list">
             {outgoing.map((req) => (
-              <FriendRequestView
-                key={req.id}
-                request={req}
-                direction="outgoing"
-                onCancel={cancelRequest}
-              />
+              <FriendRequestView key={req.id} request={req} direction="outgoing" />
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="spacedSection">
+        <h2>Blocked Users</h2>
+        {blockError ? (
+          <div>{blockError}</div>
+        ) : blockedUsers.length === 0 ? (
+          <div>No blocked users.</div>
+        ) : (
+          <div className="dottedList" role="list">
+            {blockedUsers.map((user) => (
+              <div key={user.username} role="listitem">
+                <UserLink user={user} />
+              </div>
             ))}
           </div>
         )}
