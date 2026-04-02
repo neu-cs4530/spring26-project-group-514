@@ -29,7 +29,11 @@ export default function useFriendList(): {
       if (updated.status === "rejected") {
         setFriends((prev) =>
           Array.isArray(prev)
-            ? prev.filter((f) => f.username !== updated.fromUser && f.username !== updated.toUser)
+            ? prev.filter(
+                (f) =>
+                  f.username !== updated.fromUser.username &&
+                  f.username !== updated.toUser.username,
+              )
             : prev,
         );
       }
