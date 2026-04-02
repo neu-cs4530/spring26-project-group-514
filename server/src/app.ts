@@ -12,6 +12,7 @@ import * as lobby from "./controllers/lobby.controller.ts";
 import * as friend from "./controllers/friend.controller.ts";
 import * as dm from "./controllers/dm.controller.ts";
 import * as block from "./controllers/block.controller.ts";
+import * as stats from "./controllers/stats.controller.ts";
 import { type GameServer } from "./types.ts";
 
 export const app = express();
@@ -83,6 +84,16 @@ app.use(
         .post("/block", block.postBlock(io))
         .post("/unblock", block.postUnblock(io))
         .get("/list/:username", block.getList),
+    )
+    .use(
+      "/stats",
+      express
+        .Router()
+        .get("/player/:username", stats.getPlayerStatsHandler)
+        .get("/history/:username", stats.getMatchHistoryHandler)
+        .get("/leaderboard", stats.getLeaderboardHandler)
+        .post("/leaderboard-opt-out", stats.postLeaderboardOptOut)
+        .get("/leaderboard-opt-out/:username", stats.getLeaderboardOptOutHandler),
     ),
 );
 

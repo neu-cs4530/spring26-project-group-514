@@ -41,6 +41,12 @@ export default function SideBarNav() {
       >
         Profile
       </NavLink>
+      <NavLink to="/leaderboard" className={navClass}>
+        Leaderboard
+      </NavLink>
+      <NavLink to="/match-history" className={navClass}>
+        Match History
+      </NavLink>
       <NavLink to="/friends" className={navClass}>
         Friends
       </NavLink>
