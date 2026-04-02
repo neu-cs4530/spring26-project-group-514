@@ -29,7 +29,11 @@ export default function useFriendList(): {
       if (updated.status === "rejected") {
         setFriends((prev) =>
           Array.isArray(prev)
-            ? prev.filter((f) => f.username !== updated.fromUser && f.username !== updated.toUser)
+            ? prev.filter(
+                (f) =>
+                  f.username !== updated.fromUser.username &&
+                  f.username !== updated.toUser.username,
+              )
             : prev,
         );
       }
@@ -43,6 +47,32 @@ export default function useFriendList(): {
       socket.off("friendRequestUpdated", handleFriendRequestUpdated);
     };
   }, [socket, user.username]);
+
+  useEffect(() => {
+    const handleFriendRemoved = (removedBy: SafeUserInfo) => {
+      setFriends((prev) =>
+        Array.isArray(prev) ? prev.filter((f) => f.username !== removedBy.username) : prev,
+      );
+    };
+
+    socket.on("friendRemoved", handleFriendRemoved);
+    return () => {
+      socket.off("friendRemoved", handleFriendRemoved);
+    };
+  }, [socket]);
+
+  useEffect(() => {
+    const handleUserBlocked = (blocker: SafeUserInfo) => {
+      setFriends((prev) =>
+        Array.isArray(prev) ? prev.filter((f) => f.username !== blocker.username) : prev,
+      );
+    };
+
+    socket.on("userBlocked", handleUserBlocked);
+    return () => {
+      socket.off("userBlocked", handleUserBlocked);
+    };
+  }, [socket]);
 
   const removeFriend = async (targetUsername: string) => {
     const result = await removeFriendRequest(auth, targetUsername);

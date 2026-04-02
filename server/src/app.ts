@@ -11,6 +11,7 @@ import * as thread from "./controllers/thread.controller.ts";
 import * as lobby from "./controllers/lobby.controller.ts";
 import * as friend from "./controllers/friend.controller.ts";
 import * as dm from "./controllers/dm.controller.ts";
+import * as block from "./controllers/block.controller.ts";
 import * as stats from "./controllers/stats.controller.ts";
 import { type GameServer } from "./types.ts";
 
@@ -73,9 +74,17 @@ app.use(
         .get("/requests/:username", friend.getRequests)
         .post("/request", friend.postRequest(io))
         .post("/respond", friend.postRespond(io))
-        .post("/remove", friend.postRemove),
+        .post("/remove", friend.postRemove(io)),
     )
     .use("/dm", express.Router().get("/list/:username", dm.getList).get("/:id", dm.getById))
+    .use(
+      "/block",
+      express
+        .Router()
+        .post("/block", block.postBlock(io))
+        .post("/unblock", block.postUnblock(io))
+        .get("/list/:username", block.getList),
+    )
     .use(
       "/stats",
       express

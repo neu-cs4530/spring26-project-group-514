@@ -29,8 +29,8 @@ describe("GET /api/friend/requests/:username", () => {
     expect(response.status).toBe(200);
     expect(response.body).toStrictEqual([
       expect.objectContaining({
-        fromUser: "user0",
-        toUser: "user2",
+        fromUser: expect.objectContaining({ username: "user0" }),
+        toUser: expect.objectContaining({ username: "user2" }),
         status: "pending",
       }),
     ]);
@@ -44,8 +44,8 @@ describe("GET /api/friend/requests/:username", () => {
     expect(response.status).toBe(200);
     expect(response.body).toStrictEqual([
       expect.objectContaining({
-        fromUser: "user0",
-        toUser: "user2",
+        fromUser: expect.objectContaining({ username: "user0" }),
+        toUser: expect.objectContaining({ username: "user2" }),
         status: "pending",
       }),
     ]);
@@ -65,8 +65,8 @@ describe("POST /api/friend/request", () => {
     expect(response.status).toBe(200);
     expect(response.body).toStrictEqual(
       expect.objectContaining({
-        fromUser: "user3",
-        toUser: "user1",
+        fromUser: expect.objectContaining({ username: "user3" }),
+        toUser: expect.objectContaining({ username: "user1" }),
         status: "pending",
       }),
     );
@@ -172,8 +172,8 @@ describe("POST /api/friend/respond", () => {
     expect(response.status).toBe(200);
     expect(response.body).toStrictEqual(
       expect.objectContaining({
-        fromUser: "user3",
-        toUser: "user2",
+        fromUser: expect.objectContaining({ username: "user3" }),
+        toUser: expect.objectContaining({ username: "user2" }),
         status: "rejected",
         respondedAt: expect.anything(),
       }),
@@ -201,8 +201,8 @@ describe("POST /api/friend/respond", () => {
     expect(response.status).toBe(200);
     expect(response.body).toStrictEqual(
       expect.objectContaining({
-        fromUser: "user0",
-        toUser: "user2",
+        fromUser: expect.objectContaining({ username: "user0" }),
+        toUser: expect.objectContaining({ username: "user2" }),
         status: "accepted",
         respondedAt: expect.anything(),
       }),
@@ -233,6 +233,58 @@ describe("POST /api/friend/respond", () => {
       .post("/api/friend/respond")
       .send({ auth: auth2, payload: { requestId: sendRes.body.id, action: "accepted" } });
     expect(response.status).toBe(400);
+  });
+
+  it("should create a DM for both users after accepting a friend request", async () => {
+    // Send and accept friend request: user0 -> user3
+    const sendRes = await supertest(app)
+      .post("/api/friend/request")
+      .send({ auth: auth0, payload: { toUsername: auth3.username } });
+
+    await supertest(app)
+      .post("/api/friend/respond")
+      .send({ auth: auth3, payload: { requestId: sendRes.body.id, action: "accepted" } });
+
+    // Both users should now have a DM with each other
+    const dm0 = await supertest(app).get("/api/dm/list/user0").set("x-password", auth0.password);
+    expect(dm0.status).toBe(200);
+    const dm0Participants = (dm0.body as { participants: string[] }[]).map((d) => d.participants);
+    expect(dm0Participants).toContainEqual(
+      expect.arrayContaining([auth0.username, auth3.username]),
+    );
+
+    const dm3 = await supertest(app).get("/api/dm/list/user3").set("x-password", auth3.password);
+    expect(dm3.status).toBe(200);
+    const dm3Participants = (dm3.body as { participants: string[] }[]).map((d) => d.participants);
+    expect(dm3Participants).toContainEqual(
+      expect.arrayContaining([auth0.username, auth3.username]),
+    );
+  });
+
+  it("should NOT create a DM after rejecting a friend request", async () => {
+    // Send and reject friend request: user0 -> user1
+    const sendRes = await supertest(app)
+      .post("/api/friend/request")
+      .send({ auth: auth0, payload: { toUsername: auth3.username } });
+
+    await supertest(app)
+      .post("/api/friend/respond")
+      .send({ auth: auth3, payload: { requestId: sendRes.body.id, action: "rejected" } });
+
+    // Neither user should have a DM with the other
+    const dm0 = await supertest(app).get("/api/dm/list/user0").set("x-password", auth0.password);
+    expect(dm0.status).toBe(200);
+    const dm0Participants = (dm0.body as { participants: string[] }[]).map((d) => d.participants);
+    expect(dm0Participants).not.toContainEqual(
+      expect.arrayContaining([auth0.username, auth3.username]),
+    );
+
+    const dm3 = await supertest(app).get("/api/dm/list/user3").set("x-password", auth3.password);
+    expect(dm3.status).toBe(200);
+    const dm3Participants = (dm3.body as { participants: string[] }[]).map((d) => d.participants);
+    expect(dm3Participants).not.toContainEqual(
+      expect.arrayContaining([auth0.username, auth3.username]),
+    );
   });
 });
 

@@ -8,7 +8,7 @@ import { useState } from "react";
 export default function AddFriendForm({
   onSend,
 }: {
-  onSend: (toUsername: string) => Promise<void>;
+  onSend: (toUsername: string) => Promise<string | null>;
 }) {
   const [value, setValue] = useState("");
   const [status, setStatus] = useState<string | null>(null);

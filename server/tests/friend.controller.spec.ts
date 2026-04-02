@@ -38,12 +38,20 @@ describe("postRequest socket emission", () => {
     await postRequest(mockIo)(req, res);
 
     expect(res.send).toHaveBeenCalledWith(
-      expect.objectContaining({ fromUser: "user0", toUser: "user1", status: "pending" }),
+      expect.objectContaining({
+        fromUser: expect.objectContaining({ username: "user0" }),
+        toUser: expect.objectContaining({ username: "user1" }),
+        status: "pending",
+      }),
     );
     expect(mockIo.to).toHaveBeenCalledExactlyOnceWith("user:user1");
     expect(mockIo.emit).toHaveBeenCalledExactlyOnceWith(
       "friendRequestReceived",
-      expect.objectContaining({ fromUser: "user0", toUser: "user1", status: "pending" }),
+      expect.objectContaining({
+        fromUser: expect.objectContaining({ username: "user0" }),
+        toUser: expect.objectContaining({ username: "user1" }),
+        status: "pending",
+      }),
     );
   });
 
@@ -80,12 +88,21 @@ describe("postRespond socket emission", () => {
     await postRespond(mockIo)(req, res);
 
     expect(res.send).toHaveBeenCalledWith(
-      expect.objectContaining({ fromUser: "user0", toUser: "user1", status: "accepted" }),
+      expect.objectContaining({
+        fromUser: expect.objectContaining({ username: "user0" }),
+        toUser: expect.objectContaining({ username: "user1" }),
+        status: "accepted",
+      }),
     );
-    expect(mockIo.to).toHaveBeenCalledExactlyOnceWith("user:user0");
-    expect(mockIo.emit).toHaveBeenCalledExactlyOnceWith(
+    expect(mockIo.to).toHaveBeenCalledWith("user:user0");
+    expect(mockIo.to).toHaveBeenCalledWith("user:user1");
+    expect(mockIo.emit).toHaveBeenCalledWith(
       "friendRequestUpdated",
-      expect.objectContaining({ fromUser: "user0", toUser: "user1", status: "accepted" }),
+      expect.objectContaining({
+        fromUser: expect.objectContaining({ username: "user0" }),
+        toUser: expect.objectContaining({ username: "user1" }),
+        status: "accepted",
+      }),
     );
   });
 
@@ -106,10 +123,16 @@ describe("postRespond socket emission", () => {
     await postRespond(mockIo)(req, res);
 
     expect(res.send).toHaveBeenCalledWith(expect.objectContaining({ status: "rejected" }));
-    expect(mockIo.to).toHaveBeenCalledExactlyOnceWith("user:user0");
-    expect(mockIo.emit).toHaveBeenCalledExactlyOnceWith(
+
+    expect(mockIo.to).toHaveBeenCalledWith("user:user0");
+    expect(mockIo.to).toHaveBeenCalledWith("user:user1");
+    expect(mockIo.emit).toHaveBeenCalledWith(
       "friendRequestUpdated",
-      expect.objectContaining({ status: "rejected" }),
+      expect.objectContaining({
+        fromUser: expect.objectContaining({ username: "user0" }),
+        toUser: expect.objectContaining({ username: "user1" }),
+        status: "rejected",
+      }),
     );
   });
 

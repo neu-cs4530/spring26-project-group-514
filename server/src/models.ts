@@ -125,6 +125,7 @@ export interface ThreadRecord {
  * - `friendInReqs`: user's incoming friend requests
  * - `friendOutReqs`: user's outgoing friend requests
  * - `directChats`: user's direct chats
+ * - `blocked`: user's blocked users
  */
 export interface UserRecord {
   username: string; // References Auth records
@@ -134,6 +135,7 @@ export interface UserRecord {
   friendInReqs: Record<RecordId, RecordId>; // References User records -> FriendRequest records
   friendOutReqs: Record<RecordId, RecordId>; // References User records -> FriendRequest records
   directChats: Record<RecordId, RecordId>; // References User records -> DirectChatSummary records
+  blocked: Record<RecordId, true>; // References User records
 }
 
 /**

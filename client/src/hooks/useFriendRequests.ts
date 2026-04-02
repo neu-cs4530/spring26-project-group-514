@@ -1,4 +1,4 @@
-import type { ErrorMsg, FriendRequest } from "@gamenite/shared";
+import type { ErrorMsg, FriendRequest, SafeUserInfo } from "@gamenite/shared";
 import { useEffect, useState } from "react";
 import {
   getPendingRequests,
@@ -18,10 +18,9 @@ import useAuth from "./useAuth.ts";
 export default function useFriendRequests(): {
   incoming: { message: string } | FriendRequest[];
   outgoing: { message: string } | FriendRequest[];
-  sendRequest: (toUsername: string) => Promise<void>;
-  acceptRequest: (requestId: string) => Promise<void>;
-  declineRequest: (requestId: string) => Promise<void>;
-  cancelRequest: (requestId: string) => Promise<void>;
+  sendRequest: (toUsername: string) => Promise<string | null>;
+  acceptRequest: (requestId: string) => Promise<string | null>;
+  declineRequest: (requestId: string) => Promise<string | null>;
 } {
   const { user, socket } = useLoginContext();
   const auth = useAuth();
@@ -42,40 +41,77 @@ export default function useFriendRequests(): {
     };
   }, [socket]);
 
+  useEffect(() => {
+    const handleUserBlocked = (blocker: SafeUserInfo) => {
+      setRequests((prev) =>
+        Array.isArray(prev)
+          ? prev.filter(
+              (r) =>
+                r.fromUser.username !== blocker.username && r.toUser.username !== blocker.username,
+            )
+          : prev,
+      );
+    };
+
+    socket.on("userBlocked", handleUserBlocked);
+    return () => {
+      socket.off("userBlocked", handleUserBlocked);
+    };
+  }, [socket]);
+
   const removeById = (id: string) =>
     setRequests((prev) => (Array.isArray(prev) ? prev.filter((r) => r.id !== id) : prev));
 
-  const sendRequest = async (toUsername: string) => {
+  useEffect(() => {
+    const handleFriendRequestUpdated = (updated: FriendRequest) => {
+      if (updated.status !== "pending") {
+        removeById(updated.id);
+      }
+    };
+
+    socket.on("friendRequestUpdated", handleFriendRequestUpdated);
+    return () => {
+      socket.off("friendRequestUpdated", handleFriendRequestUpdated);
+    };
+  }, [socket]);
+
+  // sendRequest: return error or null on success
+  const sendRequest = async (toUsername: string): Promise<string | null> => {
     const result = await sendFriendRequest(auth, toUsername);
     if (result && !("error" in result)) {
       setRequests((prev) => (Array.isArray(prev) ? [...prev, result] : [result]));
+      return null;
     }
+    return result?.error ?? "Unknown Error";
   };
 
-  const acceptRequest = async (requestId: string) => {
+  // acceptRequest: return error or null on success
+  const acceptRequest = async (requestId: string): Promise<string | null> => {
     const result = await respondToRequest(auth, requestId, "accepted");
-    if (result && !("error" in result)) removeById(requestId);
+    if (result && !("error" in result)) {
+      removeById(requestId);
+      return null;
+    }
+    return result?.error ?? "Unknown Error";
   };
 
-  const declineRequest = async (requestId: string) => {
+  // declineRequest: return error or null on success
+  const declineRequest = async (requestId: string): Promise<string | null> => {
     const result = await respondToRequest(auth, requestId, "rejected");
-    if (result && !("error" in result)) removeById(requestId);
-  };
-
-  const cancelRequest = async (requestId: string) => {
-    // TODO: confirm with teammate whether /respond with "rejected" is correct
-    // for canceling an outgoing request, or if a dedicated endpoint is needed.
-    const result = await respondToRequest(auth, requestId, "rejected");
-    if (result && !("error" in result)) removeById(requestId);
+    if (result && !("error" in result)) {
+      removeById(requestId);
+      return null;
+    }
+    return result?.error ?? "Unknown Error";
   };
 
   const allRequests = Array.isArray(requests) ? requests : [];
 
   const incomingArr = allRequests.filter(
-    (r) => r.toUser === user.username && r.status === "pending",
+    (r) => r.toUser.username === user.username && r.status === "pending",
   );
   const outgoingArr = allRequests.filter(
-    (r) => r.fromUser === user.username && r.status === "pending",
+    (r) => r.fromUser.username === user.username && r.status === "pending",
   );
 
   const incoming: { message: string } | FriendRequest[] = !requests
@@ -94,5 +130,5 @@ export default function useFriendRequests(): {
         ? { message: "No outgoing requests." }
         : outgoingArr;
 
-  return { incoming, outgoing, sendRequest, acceptRequest, declineRequest, cancelRequest };
+  return { incoming, outgoing, sendRequest, acceptRequest, declineRequest };
 }

@@ -44,6 +44,7 @@ export async function createUser(
     friendInReqs: {},
     friendOutReqs: {},
     directChats: {},
+    blocked: {},
   });
   await updateAuth(username, password, id);
   return Promise.resolve({

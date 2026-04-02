@@ -9,6 +9,7 @@ import {
 import { type RestAPI, type GameServer } from "../types.ts";
 import { z } from "zod";
 import { checkAuth } from "../services/auth.service.ts";
+import { populateSafeUserInfo } from "../services/user.service.ts";
 
 /**
  * Handles getting a user's friend list
@@ -102,7 +103,8 @@ export const postRespond =
         body.data.payload.requestId,
         body.data.payload.action,
       );
-      io.to(`user:${friendReq.fromUser}`).emit("friendRequestUpdated", friendReq);
+      io.to(`user:${friendReq.fromUser.username}`).emit("friendRequestUpdated", friendReq);
+      io.to(`user:${user.username}`).emit("friendRequestUpdated", friendReq);
       res.send(friendReq);
     } catch (e) {
       res.status(400).send({ error: "Bad Request" });
@@ -115,23 +117,27 @@ export const postRespond =
  * @param req request containing auth info and the friend's username to remove
  * @param res response either returning the removed friend's info or an error
  */
-export const postRemove: RestAPI<SafeUserInfo> = async (req, res) => {
-  const body = withAuth(z.object({ friendUsername: z.string() })).safeParse(req.body);
-  if (body.error) {
-    res.status(400).send({ error: "Poorly-formed request" });
-    return;
-  }
+export const postRemove =
+  (io: GameServer): RestAPI<SafeUserInfo> =>
+  async (req, res) => {
+    const body = withAuth(z.object({ friendUsername: z.string() })).safeParse(req.body);
+    if (body.error) {
+      res.status(400).send({ error: "Poorly-formed request" });
+      return;
+    }
 
-  const user = await checkAuth(body.data.auth);
-  if (!user) {
-    res.status(403).send({ error: "Invalid credentials" });
-    return;
-  }
+    const user = await checkAuth(body.data.auth);
+    if (!user) {
+      res.status(403).send({ error: "Invalid credentials" });
+      return;
+    }
 
-  try {
-    const removed = await removeFriend(user.username, body.data.payload.friendUsername);
-    res.send(removed);
-  } catch (e) {
-    res.status(400).send({ error: "Bad Request" });
-  }
-};
+    try {
+      const removed = await removeFriend(user.username, body.data.payload.friendUsername);
+      const removerInfo = await populateSafeUserInfo(user.userId);
+      io.to(`user:${body.data.payload.friendUsername}`).emit("friendRemoved", removerInfo);
+      res.send(removed);
+    } catch (e) {
+      res.status(400).send({ error: "Bad Request" });
+    }
+  };
