@@ -5,14 +5,15 @@ import FriendRequestView from "../components/FriendRequestView.tsx";
 import AddFriendForm from "../components/AddFriendForm.tsx";
 import useBlockList from "../hooks/useBlockList.ts";
 import UserLink from "../components/UserLink.tsx";
+import "./Friends.css";
 
 export default function Friends() {
   const { friends, removeFriend } = useFriendList();
   const { incoming, outgoing, sendRequest, acceptRequest, declineRequest } = useFriendRequests();
-  const { blockedUsers, blockError } = useBlockList();
+  const { blockedUsers, blockError, unblockUser } = useBlockList();
 
   return (
-    <div className="content">
+    <div className="content friends-page">
       <AddFriendForm onSend={sendRequest} />
 
       <div className="spacedSection">
@@ -71,6 +72,9 @@ export default function Friends() {
             {blockedUsers.map((user) => (
               <div key={user.username} role="listitem">
                 <UserLink user={user} />
+                <button className="outline narrow" onClick={() => unblockUser(user.username)}>
+                  Unblock
+                </button>
               </div>
             ))}
           </div>

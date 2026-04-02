@@ -53,6 +53,7 @@ describe("Header component", () => {
       </LoginContext>,
     );
 
+    fireEvent.click(screen.getByText(/displayname/i));
     fireEvent.click(screen.getByText(/Log Out/i));
     expect(mockedReset).toHaveBeenCalledOnce();
     expect(mockedUseNavigate).toHaveBeenCalledExactlyOnceWith("/login");
@@ -76,6 +77,7 @@ describe("Header component", () => {
       </LoginContext>,
     );
 
+    fireEvent.click(screen.getByText(/displayname/i));
     fireEvent.click(screen.getByText(/View Profile/i));
     expect(mockedUseNavigate).toHaveBeenCalledExactlyOnceWith("/profile/username123");
   });

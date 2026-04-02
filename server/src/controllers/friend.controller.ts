@@ -103,7 +103,7 @@ export const postRespond =
         body.data.payload.requestId,
         body.data.payload.action,
       );
-      io.to(`user:${friendReq.fromUser}`).emit("friendRequestUpdated", friendReq);
+      io.to(`user:${friendReq.fromUser.username}`).emit("friendRequestUpdated", friendReq);
       io.to(`user:${user.username}`).emit("friendRequestUpdated", friendReq);
       res.send(friendReq);
     } catch (e) {

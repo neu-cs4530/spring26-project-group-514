@@ -45,7 +45,10 @@ export default function useFriendRequests(): {
     const handleUserBlocked = (blocker: SafeUserInfo) => {
       setRequests((prev) =>
         Array.isArray(prev)
-          ? prev.filter((r) => r.fromUser !== blocker.username && r.toUser !== blocker.username)
+          ? prev.filter(
+              (r) =>
+                r.fromUser.username !== blocker.username && r.toUser.username !== blocker.username,
+            )
           : prev,
       );
     };
@@ -105,10 +108,10 @@ export default function useFriendRequests(): {
   const allRequests = Array.isArray(requests) ? requests : [];
 
   const incomingArr = allRequests.filter(
-    (r) => r.toUser === user.username && r.status === "pending",
+    (r) => r.toUser.username === user.username && r.status === "pending",
   );
   const outgoingArr = allRequests.filter(
-    (r) => r.fromUser === user.username && r.status === "pending",
+    (r) => r.fromUser.username === user.username && r.status === "pending",
   );
 
   const incoming: { message: string } | FriendRequest[] = !requests

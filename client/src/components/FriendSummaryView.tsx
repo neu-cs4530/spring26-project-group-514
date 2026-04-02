@@ -1,4 +1,3 @@
-import "./FriendSummaryView.css";
 import type { SafeUserInfo } from "@gamenite/shared";
 import UserLink from "./UserLink.tsx";
 
@@ -14,9 +13,9 @@ export default function FriendSummaryView({
   onRemove,
 }: SafeUserInfo & { onRemove: (username: string) => void }) {
   return (
-    <div className="friendSummary" role="listitem">
-      <UserLink user={{ username, display, createdAt }} capitalize />
-      <button className="secondary narrow" onClick={() => onRemove(username)}>
+    <div key={username} role="listitem">
+      <UserLink user={{ username, display, createdAt }} />
+      <button className="danger narrow" onClick={() => onRemove(username)}>
         Remove
       </button>
     </div>

@@ -7,6 +7,7 @@ import useFriendRequests from "../hooks/useFriendRequests.ts";
 import useBlockList from "../hooks/useBlockList.ts";
 import ConfirmModal from "../components/ConfirmModal";
 import "./ViewProfile.css";
+import { BlockedIcon, CheckIcon, CrossIcon } from "../components/Icons";
 
 interface ViewProfileProps {
   username: string;
@@ -28,10 +29,10 @@ export default function ViewProfile({ username }: ViewProfileProps) {
   const isAlreadyFriend = !("message" in friends) && friends.some((f) => f.username === username);
 
   const hasPendingOutgoing =
-    !("message" in outgoing) && outgoing.some((r) => r.toUser === username);
+    !("message" in outgoing) && outgoing.some((r) => r.toUser.username === username);
 
   const incomingRequest = !("message" in incoming)
-    ? incoming.find((r) => r.fromUser === username)
+    ? incoming.find((r) => r.fromUser.username === username)
     : undefined;
 
   const [sending, setSending] = useState(false);
@@ -105,7 +106,12 @@ export default function ViewProfile({ username }: ViewProfileProps) {
 
   function renderFriendAction() {
     if (isBlocked) {
-      return <div style={{ color: "blocked-label" }}>Blocked</div>;
+      return (
+        <button className="outline-blocked narrow" disabled>
+          <BlockedIcon />
+          Blocked
+        </button>
+      );
     }
     if (sending) {
       return (
@@ -117,20 +123,25 @@ export default function ViewProfile({ username }: ViewProfileProps) {
     switch (requestStatus) {
       case "friends":
         return (
-          <button className="outline-success narrow" disabled>
+          <button className="outline-friend narrow" disabled>
             Friends
           </button>
         );
       case "incoming":
         return (
           <div>
-            <div className="smallAndGray">This user sent you a friend request.</div>
-            <button className="primary narrow" onClick={() => handleAccept(incomingRequest!.id)}>
-              Accept
-            </button>
-            <button className="secondary narrow" onClick={() => handleDecline(incomingRequest!.id)}>
-              Decline
-            </button>
+            <div className="smallAndGray">Wanna be friends?</div>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <button className="primary narrow" onClick={() => handleAccept(incomingRequest!.id)}>
+                <CheckIcon />
+              </button>
+              <button
+                className="secondary narrow"
+                onClick={() => handleDecline(incomingRequest!.id)}
+              >
+                <CrossIcon />
+              </button>
+            </div>
           </div>
         );
       case "sent":
@@ -166,7 +177,7 @@ export default function ViewProfile({ username }: ViewProfileProps) {
         <div className="profile-page">
           {showBlockConfirm && (
             <ConfirmModal
-              message={`Blocking will remove existing friendship, friend request, and DM messages.\nAre you sure you want to block ${username}?`}
+              message={`Blocking will remove existing friendship, friend request, and DM messages.\nAre you sure you want to block ${componentState.user.display}?`}
               confirmLabel="Yes, Block"
               cancelLabel="No"
               onConfirm={handleConfirmBlock}
@@ -175,9 +186,9 @@ export default function ViewProfile({ username }: ViewProfileProps) {
           )}
           {actionError && <div className="action-error-banner">{actionError}</div>}
           <div className="profile-actions">
-            <div>{renderFriendAction()}</div>
+            {renderFriendAction()}
             <button
-              className={isBlocked ? "outline narrow" : "danger narrow"}
+              className={isBlocked ? "outline-unblock narrow" : "danger narrow"}
               onClick={handleToggleBlock}
             >
               {isBlocked ? "Unblock" : "Block"}

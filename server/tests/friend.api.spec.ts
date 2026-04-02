@@ -29,8 +29,8 @@ describe("GET /api/friend/requests/:username", () => {
     expect(response.status).toBe(200);
     expect(response.body).toStrictEqual([
       expect.objectContaining({
-        fromUser: "user0",
-        toUser: "user2",
+        fromUser: expect.objectContaining({ username: "user0" }),
+        toUser: expect.objectContaining({ username: "user2" }),
         status: "pending",
       }),
     ]);
@@ -44,8 +44,8 @@ describe("GET /api/friend/requests/:username", () => {
     expect(response.status).toBe(200);
     expect(response.body).toStrictEqual([
       expect.objectContaining({
-        fromUser: "user0",
-        toUser: "user2",
+        fromUser: expect.objectContaining({ username: "user0" }),
+        toUser: expect.objectContaining({ username: "user2" }),
         status: "pending",
       }),
     ]);
@@ -65,8 +65,8 @@ describe("POST /api/friend/request", () => {
     expect(response.status).toBe(200);
     expect(response.body).toStrictEqual(
       expect.objectContaining({
-        fromUser: "user3",
-        toUser: "user1",
+        fromUser: expect.objectContaining({ username: "user3" }),
+        toUser: expect.objectContaining({ username: "user1" }),
         status: "pending",
       }),
     );
@@ -172,8 +172,8 @@ describe("POST /api/friend/respond", () => {
     expect(response.status).toBe(200);
     expect(response.body).toStrictEqual(
       expect.objectContaining({
-        fromUser: "user3",
-        toUser: "user2",
+        fromUser: expect.objectContaining({ username: "user3" }),
+        toUser: expect.objectContaining({ username: "user2" }),
         status: "rejected",
         respondedAt: expect.anything(),
       }),
@@ -201,8 +201,8 @@ describe("POST /api/friend/respond", () => {
     expect(response.status).toBe(200);
     expect(response.body).toStrictEqual(
       expect.objectContaining({
-        fromUser: "user0",
-        toUser: "user2",
+        fromUser: expect.objectContaining({ username: "user0" }),
+        toUser: expect.objectContaining({ username: "user2" }),
         status: "accepted",
         respondedAt: expect.anything(),
       }),

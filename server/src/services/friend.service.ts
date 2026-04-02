@@ -17,13 +17,14 @@ export async function populateFriendRequest(
   record: FriendRequestRecord,
 ): Promise<FriendRequest> {
   const [fromUser, toUser] = await Promise.all([
-    UserRepo.get(record.fromUser),
-    UserRepo.get(record.toUser),
+    populateSafeUserInfo(record.fromUser),
+    populateSafeUserInfo(record.toUser),
   ]);
+
   return {
     id,
-    fromUser: fromUser.username,
-    toUser: toUser.username,
+    fromUser: fromUser,
+    toUser: toUser,
     status: record.status,
     createdAt: new Date(record.createdAt),
     ...(record.respondedAt && { respondedAt: new Date(record.respondedAt) }),

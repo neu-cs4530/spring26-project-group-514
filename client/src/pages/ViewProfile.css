@@ -13,16 +13,41 @@
   background-color: #b02a37;
 }
 
-.profile-page .outline {
+.profile-page .outline-unblock {
   background-color: transparent;
   color: #6c757d;
   border: 1px solid #6c757d;
   cursor: pointer;
 }
 
-.profile-page .outline:hover {
+.profile-page .outline-unblock:hover {
   background-color: #6c757d;
   color: #fff;
+}
+
+.profile-page .outline-friend {                                                                                                                                                            
+  background-color: transparent;                                                                                                                                                            
+  color: #0d6efd;                                                                                                                                                                           
+  border: 1px solid #0d6efd;                                                                                                                                                                
+  cursor: default;                                                                                                                                                                          
+}                                                                                                                                                                                           
+                                                                                                                                                                                              
+.profile-page .outline-friend:disabled {                                                                                                                                                   
+  color: #0d6efd;                                                                                                                                                                       
+  border-color: #0d6efd;
+  opacity: 0.8;                                                                                                                                                                             
+}
+
+.profile-page .outline-blocked {                                                                                                                                                            
+  display: inline-flex;
+  background-color: transparent;                                                                                                                                                            
+  color: #dc3545;                                                                                                                                                                           
+  cursor: default;                                                                                                                                                                          
+}                                                                                                                                                                                           
+                                                                                                                                                                                              
+.profile-page .outline-blocked:disabled {                                                                                                                                                   
+  color: #dc3545;                                                                                                                                                                       
+  opacity: 0.8;                                                                                                                                                                             
 }
 
 
@@ -57,12 +82,7 @@
   0%, 70% { opacity: 1; }
   100% { opacity: 0; }
 }
-
-.blocked-label {
-  color: red;
-  font-weight: bold;
-}                                                                                                                                           
-  
+ 
 .error-text {                                                                                                                               
   color: red;   
 }
