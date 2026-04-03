@@ -27,11 +27,10 @@ export default function ViewProfile({ username }: ViewProfileProps) {
   const [recentHistory, setRecentHistory] = useState<MatchHistoryEntry[]>([]);
   const timeSince = useTimeSince();
   const { blockedSet, blockUser, unblockUser } = useBlockList();
+  const isBlocked = blockedSet.has(username);
+
   const { friends } = useFriendList();
   const { incoming, outgoing, sendRequest, acceptRequest, declineRequest } = useFriendRequests();
-  const { actionError, setActionError } = useActionError();
-
-  const isBlocked = blockedSet.has(username);
 
   const isAlreadyFriend = !("message" in friends) && friends.some((f) => f.username === username);
 
@@ -50,6 +49,12 @@ export default function ViewProfile({ username }: ViewProfileProps) {
       : incomingRequest
         ? "incoming"
         : "idle";
+
+  useEffect(() => {
+    if (!actionError) return;
+    const timer = setTimeout(() => setActionError(null), 4000);
+    return () => clearTimeout(timer);
+  }, [actionError]);
 
   useEffect(() => {
     let cancel = false;
@@ -214,7 +219,7 @@ export default function ViewProfile({ username }: ViewProfileProps) {
               onCancel={() => setShowBlockConfirm(false)}
             />
           )}
-          {actionError && <ActionErrorBanner error={actionError} />}
+          {actionError && <div className="action-error-banner">{actionError}</div>}
           <div className="profile-actions">
             {renderFriendAction()}
             <button
