@@ -64,19 +64,6 @@
   position: relative;
 }
 
-.action-error-banner {
-  position: fixed;
-  top: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 1000;
-  background: #fee2e2;
-  border: 1px solid black;
-  padding: 8px 12px;
-  border-radius: 4px;
-  animation: fadeOut 4s forwards;
-}
-
 @keyframes fadeOut {
   0%,
   70% {

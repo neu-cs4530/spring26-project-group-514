@@ -6,24 +6,60 @@ import AddFriendForm from "../components/AddFriendForm.tsx";
 import useBlockList from "../hooks/useBlockList.ts";
 import UserLink from "../components/UserLink.tsx";
 import "./Friends.css";
+import { useState } from "react";
+import useActionError from "../hooks/useActionError.ts";
+import ConfirmModal from "../components/ConfirmModal.tsx";
+import ActionErrorBanner from "../components/ActionErrorBanner.tsx";
+import type { SafeUserInfo } from "@gamenite/shared";
 
 export default function Friends() {
   const { friends, removeFriend } = useFriendList();
   const { incoming, outgoing, sendRequest, acceptRequest, declineRequest } = useFriendRequests();
   const { blockedUsers, blockError, unblockUser } = useBlockList();
+  const { actionError, setActionError } = useActionError();
+  const [friendToRemove, setRemoveFriend] = useState<SafeUserInfo | null>(null);
+
+  function handleRemove(friend: SafeUserInfo) {
+    setRemoveFriend(friend);
+  }
+
+  async function handleConfirmRemove() {
+    if (!friendToRemove) return;
+    const error = await removeFriend(friendToRemove.username);
+    if (error) setActionError(error);
+    setRemoveFriend(null);
+  }
+
+  async function handleSend(username: string): Promise<string | null> {
+    const error = await sendRequest(username);
+    if (error) {
+      setActionError(error);
+      return error;
+    }
+    return null;
+  }
 
   return (
     <div className="content friends-page">
-      <AddFriendForm onSend={sendRequest} />
-
+      {friendToRemove && (
+        <ConfirmModal
+          message={`Removing existing friendship will delete all DM messages.\n Are you sure you want to remove ${friendToRemove.display}`}
+          confirmLabel="Yes, Remove"
+          cancelLabel="No"
+          onConfirm={handleConfirmRemove}
+          onCancel={() => setRemoveFriend(null)}
+        />
+      )}
+      {actionError && <ActionErrorBanner error={actionError} />}
+      <AddFriendForm onSend={handleSend} />
       <div className="spacedSection">
         <h2>Friends</h2>
         {"message" in friends ? (
           <div>{friends.message}</div>
         ) : (
-          <div className="dottedList" role="list">
+          <div className="list" role="list">
             {friends.map((friend) => (
-              <FriendSummaryView {...friend} key={friend.username} onRemove={removeFriend} />
+              <FriendSummaryView {...friend} key={friend.username} onRemove={handleRemove} />
             ))}
           </div>
         )}
@@ -34,7 +70,7 @@ export default function Friends() {
         {"message" in incoming ? (
           <div>{incoming.message}</div>
         ) : (
-          <div className="dottedList" role="list">
+          <div className="list" role="list">
             {incoming.map((req) => (
               <FriendRequestView
                 key={req.id}
@@ -53,7 +89,7 @@ export default function Friends() {
         {"message" in outgoing ? (
           <div>{outgoing.message}</div>
         ) : (
-          <div className="dottedList" role="list">
+          <div className="list" role="list">
             {outgoing.map((req) => (
               <FriendRequestView key={req.id} request={req} direction="outgoing" />
             ))}

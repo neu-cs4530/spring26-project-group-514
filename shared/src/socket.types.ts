@@ -71,4 +71,5 @@ export interface ServerToClientEvents {
   userBlocked: (payload: SafeUserInfo) => void;
   userUnblocked: (payload: SafeUserInfo) => void;
   friendRemoved: (removedBy: SafeUserInfo) => void;
+  dmUnreadNotification: (payload: { chatId: string; lastMessageAt: Date }) => void;
 }

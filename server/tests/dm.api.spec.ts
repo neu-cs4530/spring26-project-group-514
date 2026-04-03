@@ -33,16 +33,18 @@ describe("GET /api/dm/list/:username", () => {
     const user0 = (await getUserByUsername("user0"))!;
     const user1 = (await getUserByUsername("user1"))!;
 
+    const now = new Date().toISOString();
     const msgId = await MessageRepo.add({
       text: "hey!",
       createdBy: user0.userId,
-      createdAt: new Date().toISOString(),
+      createdAt: now,
     });
 
     const chatId = await DirectChatRepo.add({
       participants: [user0.userId, user1.userId],
       messages: [msgId],
-      createdAt: new Date().toISOString(),
+      createdAt: now,
+      lastReadAt: { [user0.userId]: now, [user1.userId]: now },
     });
 
     // Update both users' directChats
@@ -60,7 +62,10 @@ describe("GET /api/dm/list/:username", () => {
     expect(response.body[0]).toStrictEqual(
       expect.objectContaining({
         directChatId: chatId,
-        participants: ["user0", "user1"],
+        participants: [
+          expect.objectContaining({ username: "user0" }),
+          expect.objectContaining({ username: "user1" }),
+        ],
         createdAt: expect.anything(),
       }),
     );
@@ -72,7 +77,10 @@ describe("GET /api/dm/list/:username", () => {
     expect(response.body[0]).toStrictEqual(
       expect.objectContaining({
         directChatId: chatId,
-        participants: ["user0", "user1"],
+        participants: [
+          expect.objectContaining({ username: "user0" }),
+          expect.objectContaining({ username: "user1" }),
+        ],
         createdAt: expect.anything(),
       }),
     );
@@ -106,10 +114,12 @@ describe("GET /api/dm/:id", () => {
     const user0 = (await getUserByUsername("user0"))!;
     const user1 = (await getUserByUsername("user1"))!;
 
+    const now = new Date().toISOString();
     const chatId = await DirectChatRepo.add({
       participants: [user0.userId, user1.userId],
       messages: [],
-      createdAt: new Date().toISOString(),
+      createdAt: now,
+      lastReadAt: { [user0.userId]: now, [user1.userId]: now },
     });
 
     // user2 is not a participant
@@ -124,16 +134,18 @@ describe("GET /api/dm/:id", () => {
     const user0 = (await getUserByUsername("user0"))!;
     const user1 = (await getUserByUsername("user1"))!;
 
+    const now = new Date().toISOString();
     const msgId = await MessageRepo.add({
       text: "hello!",
       createdBy: user0.userId,
-      createdAt: new Date().toISOString(),
+      createdAt: now,
     });
 
     const chatId = await DirectChatRepo.add({
       participants: [user0.userId, user1.userId],
       messages: [msgId],
-      createdAt: new Date().toISOString(),
+      createdAt: now,
+      lastReadAt: { [user0.userId]: now, [user1.userId]: now },
     });
 
     response = await supertest(app)

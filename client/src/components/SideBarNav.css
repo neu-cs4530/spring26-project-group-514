@@ -11,13 +11,14 @@
 
 .menu_button {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
   min-height: 2.5rem;
   width: 100%;
   border-radius: 0.5rem;
   color: cornflowerblue;
   text-decoration: none;
+  padding-inline: 1rem;
 }
 
 .menu_selected {

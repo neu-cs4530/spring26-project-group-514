@@ -17,11 +17,12 @@ export default function AddFriendForm({
     const trimmed = value.trim();
     if (!trimmed) return;
     setStatus(null);
-    try {
-      await onSend(trimmed);
+
+    const error = await onSend(trimmed);
+    if (!error) {
       setValue("");
       setStatus("Request sent!");
-    } catch {
+    } else {
       setStatus("Failed to send request. Check the username and try again.");
     }
   };

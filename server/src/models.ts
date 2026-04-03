@@ -167,6 +167,7 @@ export interface DirectChatRecord {
   participants: [RecordId, RecordId]; // Two User IDs
   messages: RecordId[]; // References Message records
   createdAt: DateISO;
+  lastReadAt: Record<RecordId, DateISO>; // User Record -> Date last read
 }
 
 /**

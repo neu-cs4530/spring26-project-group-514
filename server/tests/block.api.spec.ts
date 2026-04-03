@@ -100,7 +100,12 @@ describe("POST /api/block/block", () => {
     // Verify DM exists
     let dmRes = await supertest(app).get("/api/dm/list/user0").set("x-password", auth0.password);
     let dmParticipants = (dmRes.body as { participants: string[] }[]).map((d) => d.participants);
-    expect(dmParticipants).toContainEqual(expect.arrayContaining(["user0", "user1"]));
+    expect(dmParticipants).toContainEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ username: "user0" }),
+        expect.objectContaining({ username: "user1" }),
+      ]),
+    );
     const dmId = dmRes.body[0].directChatId;
 
     // Block
