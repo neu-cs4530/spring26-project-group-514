@@ -1,4 +1,5 @@
 import {
+  type AchievementBadge,
   type GameKey,
   type GuessState,
   type NimState,
@@ -10,6 +11,36 @@ import {
 } from "@gamenite/shared";
 import { GameHistoryRepo, PlayerStatsRepo, UserRepo } from "../repository.ts";
 import type { PlayerStatsRecord } from "../models.ts";
+
+function withBadge(badges: string[] | undefined, badge: AchievementBadge): string[] {
+  const list = badges ?? [];
+  return list.includes(badge) ? list : [...list, badge];
+}
+
+async function awardLeaderboardPlacementBadge(): Promise<void> {
+  const allKeys = await PlayerStatsRepo.getAllKeys();
+  const allStats: Array<PlayerStatsRecord & { key: string }> = [];
+
+  for (const key of allKeys) {
+    const record = await PlayerStatsRepo.get(key);
+    if (record.leaderboardOptOut || record.gamesPlayed <= 0) continue;
+    allStats.push({ ...record, key });
+  }
+
+  allStats.sort((a, b) => {
+    if (b.winRate !== a.winRate) return b.winRate - a.winRate;
+    return b.wins - a.wins;
+  });
+
+  const topThree = allStats.slice(0, 3);
+  await Promise.all(
+    topThree.map(async (record) => {
+      if (record.badges.includes("leaderboard_placement")) return;
+      record.badges = withBadge(record.badges, "leaderboard_placement");
+      await PlayerStatsRepo.set(record.key, record);
+    }),
+  );
+}
 
 /**
  * Determine the winner player indices from a completed game's state.
@@ -56,6 +87,12 @@ export async function updatePlayerStatsOnGameEnd(
       const wins = (existing?.wins ?? 0) + (isWinner ? 1 : 0);
       const losses = (existing?.losses ?? 0) + (isWinner ? 0 : 1);
       const gamesPlayed = wins + losses;
+      const currentWinStreak = isWinner ? (existing?.currentWinStreak ?? 0) + 1 : 0;
+      const bestWinStreak = Math.max(existing?.bestWinStreak ?? 0, currentWinStreak);
+      let badges = existing?.badges ?? [];
+      if (wins >= 1) badges = withBadge(badges, "first_win");
+      if (wins >= 10) badges = withBadge(badges, "ten_wins");
+      if (bestWinStreak >= 3) badges = withBadge(badges, "win_streak_3");
 
       const record: PlayerStatsRecord = {
         userId,
@@ -64,6 +101,9 @@ export async function updatePlayerStatsOnGameEnd(
         losses,
         gamesPlayed,
         winRate: gamesPlayed > 0 ? wins / gamesPlayed : 0,
+        badges,
+        currentWinStreak,
+        bestWinStreak,
         leaderboardOptOut: existing?.leaderboardOptOut ?? false,
         lastPlayedAt: now,
       };
@@ -71,6 +111,8 @@ export async function updatePlayerStatsOnGameEnd(
       await PlayerStatsRepo.set(userId, record);
     }),
   );
+
+  await awardLeaderboardPlacementBadge();
 }
 
 /**
@@ -88,6 +130,7 @@ export async function getPlayerStats(username: string): Promise<PlayerStats | nu
         losses: record.losses,
         gamesPlayed: record.gamesPlayed,
         winRate: record.winRate,
+        badges: (record.badges ?? []) as AchievementBadge[],
       };
     }
   }
@@ -146,7 +189,9 @@ export async function getMatchHistory(
     const playerIndex = record.players.indexOf(targetUserId);
     const winnerIndices = getWinnerIndices(record.type, record.state);
     let result: "win" | "loss" | "draw";
-    if (winnerIndices.length === record.players.length) {
+    if (record.endedByTimer) {
+      result = "draw";
+    } else if (winnerIndices.length === record.players.length) {
       result = "draw";
     } else if (winnerIndices.includes(playerIndex)) {
       result = "win";
@@ -184,7 +229,7 @@ export async function getLeaderboard(
   period: LeaderboardPeriod = "all",
 ): Promise<PaginatedResponse<LeaderboardEntry>> {
   const allKeys = await PlayerStatsRepo.getAllKeys();
-  const allStats: PlayerStatsRecord[] = [];
+  const byUsername = new Map<string, PlayerStatsRecord>();
 
   const now = new Date();
   let cutoff: Date | null = null;
@@ -196,12 +241,32 @@ export async function getLeaderboard(
 
   for (const key of allKeys) {
     const record = await PlayerStatsRepo.get(key);
-    // Exclude opted-out users
-    if (record.leaderboardOptOut) continue;
-    // Apply time period filter
-    if (cutoff && new Date(record.lastPlayedAt) < cutoff) continue;
-    allStats.push(record);
+    const existing = byUsername.get(record.username);
+
+    // If any record for this username is opted out, keep that as authoritative.
+    if (record.leaderboardOptOut || existing?.leaderboardOptOut) {
+      byUsername.set(record.username, {
+        ...(existing ?? record),
+        leaderboardOptOut: true,
+      });
+      continue;
+    }
+
+    if (!existing) {
+      byUsername.set(record.username, record);
+      continue;
+    }
+
+    if (new Date(record.lastPlayedAt) > new Date(existing.lastPlayedAt)) {
+      byUsername.set(record.username, record);
+    }
   }
+
+  const allStats: PlayerStatsRecord[] = Array.from(byUsername.values()).filter((record) => {
+    if (record.leaderboardOptOut) return false;
+    if (cutoff && new Date(record.lastPlayedAt) < cutoff) return false;
+    return true;
+  });
 
   // Sort by win rate descending, then by total wins descending
   allStats.sort((a, b) => {
@@ -245,6 +310,9 @@ export async function setLeaderboardOptOut(userId: string, optOut: boolean): Pro
       losses: 0,
       gamesPlayed: 0,
       winRate: 0,
+      badges: [],
+      currentWinStreak: 0,
+      bestWinStreak: 0,
       leaderboardOptOut: optOut,
       lastPlayedAt: new Date().toISOString(),
     });

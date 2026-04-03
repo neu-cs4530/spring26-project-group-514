@@ -2,9 +2,11 @@ import { type GameInfo, withAuth, zGameKey, zGameMakeMovePayload } from "@gameni
 import { type RestAPI, type GameViewUpdates, type SocketAPI, type GameServer } from "../types.ts";
 import {
   createGame,
+  expireGameByTimer,
   gameServices,
   getGameById,
   getGameScores,
+  getGameTimer,
   getGames,
   joinGame,
   startGame,
@@ -87,6 +89,8 @@ export const socketWatch: SocketAPI = (socket) => async (body) => {
     await socket.join(roomsToJoin);
     socket.emit("gameWatched", { gameId, view, players });
     socket.emit("gameScoresUpdated", await getGameScores(gameId));
+    const timer = await getGameTimer(gameId);
+    if (timer) socket.emit("gameTimerUpdated", timer);
   } catch (err) {
     logSocketError(socket, err);
   }
@@ -102,8 +106,49 @@ function sendViewUpdates(io: GameServer, gameId: string, updates: GameViewUpdate
   }
 }
 
+const gameTimerIntervals = new Map<string, ReturnType<typeof setInterval>>();
+
+function clearGameTimer(gameId: string) {
+  const timer = gameTimerIntervals.get(gameId);
+  if (timer) {
+    clearInterval(timer);
+    gameTimerIntervals.delete(gameId);
+  }
+}
+
 async function sendScoreUpdates(io: GameServer, gameId: string) {
   io.to(gameId).emit("gameScoresUpdated", await getGameScores(gameId));
+}
+
+async function maybeStartGameTimer(io: GameServer, gameId: string) {
+  clearGameTimer(gameId);
+
+  const initial = await getGameTimer(gameId);
+  if (!initial || !initial.isRunning) return;
+
+  io.to(gameId).emit("gameTimerStarted", initial);
+  io.to(gameId).emit("gameTimerUpdated", initial);
+
+  const interval = setInterval(async () => {
+    const payload = await getGameTimer(gameId);
+    if (!payload) {
+      clearGameTimer(gameId);
+      return;
+    }
+
+    io.to(gameId).emit("gameTimerUpdated", payload);
+
+    if (payload.remainingSeconds <= 0) {
+      clearGameTimer(gameId);
+      const expired = await expireGameByTimer(gameId);
+      if (expired) {
+        sendViewUpdates(io, gameId, expired.views);
+        await sendScoreUpdates(io, gameId);
+      }
+    }
+  }, 1000);
+
+  gameTimerIntervals.set(gameId, interval);
 }
 
 /**
@@ -129,6 +174,7 @@ export const socketJoinAsPlayer: SocketAPI = (socket, io) => async (body) => {
     if (game.players.length === gameServices[game.type].maxPlayers) {
       sendViewUpdates(io, gameId, await startGame(gameId, user));
       await sendScoreUpdates(io, gameId);
+      await maybeStartGameTimer(io, gameId);
     }
   } catch (err) {
     logSocketError(socket, err);
@@ -144,6 +190,7 @@ export const socketStart: SocketAPI = (socket, io) => async (body) => {
     const user = await enforceAuth(auth);
     sendViewUpdates(io, gameId, await startGame(gameId, user));
     await sendScoreUpdates(io, gameId);
+    await maybeStartGameTimer(io, gameId);
   } catch (err) {
     logSocketError(socket, err);
   }
@@ -161,9 +208,12 @@ export const socketMakeMove: SocketAPI = (socket, io) => async (body) => {
       payload: { gameId, move },
     } = withAuth(zGameMakeMovePayload).parse(body);
     const user = await enforceAuth(auth);
-    const { views, moveDescription, chatId } = await updateGame(gameId, user, move);
+    const { views, moveDescription, chatId, done } = await updateGame(gameId, user, move);
     sendViewUpdates(io, gameId, views);
     await sendScoreUpdates(io, gameId);
+    if (done) {
+      clearGameTimer(gameId);
+    }
 
     // Store the move description suffix and broadcast to the chat room
     const now = new Date();

@@ -22,7 +22,15 @@ export const getPlayerStatsHandler: RestAPI = async (req, res) => {
   }
   const stats = await getPlayerStats(username);
   if (!stats) {
-    res.send({ username, display: username, wins: 0, losses: 0, gamesPlayed: 0, winRate: 0 });
+    res.send({
+      username,
+      display: username,
+      wins: 0,
+      losses: 0,
+      gamesPlayed: 0,
+      winRate: 0,
+      badges: [],
+    });
     return;
   }
   res.send(stats);
