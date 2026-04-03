@@ -4,6 +4,7 @@ import type {
   GamePlayInfo,
   GamePlayerScore,
   GameScoresPayload,
+  GameTimerPayload,
   SafeUserInfo,
   TaggedGameView,
 } from "@gamenite/shared";
@@ -28,6 +29,8 @@ export default function useSocketsForGame(gameId: string, initialPlayers: SafeUs
   const auth = useAuth();
   const [view, setView] = useState<null | TaggedGameView>(null);
   const [scores, setScores] = useState<GamePlayerScore[]>([]);
+  const [timer, setTimer] = useState<GameTimerPayload | null>(null);
+  const [timerStartedSignal, setTimerStartedSignal] = useState(0);
   const [hasWatched, setHasWatched] = useState<boolean>(false);
   const [players, setPlayers] = useState<SafeUserInfo[]>(initialPlayers);
   const userPlayerIndex = players.findIndex(({ username }) => username === user.username);
@@ -56,9 +59,22 @@ export default function useSocketsForGame(gameId: string, initialPlayers: SafeUs
       setScores(payload.scores);
     };
 
+    const handleTimerStarted = (payload: GameTimerPayload) => {
+      if (payload.gameId !== gameId) return;
+      setTimer(payload);
+      setTimerStartedSignal(Date.now());
+    };
+
+    const handleTimerUpdated = (payload: GameTimerPayload) => {
+      if (payload.gameId !== gameId) return;
+      setTimer(payload);
+    };
+
     socket.on("gameWatched", handleWatched);
     socket.on("gamePlayersUpdated", handlePlayersUpdated);
     socket.on("gameScoresUpdated", handleScoresUpdated);
+    socket.on("gameTimerStarted", handleTimerStarted);
+    socket.on("gameTimerUpdated", handleTimerUpdated);
     socket.on("gameStateUpdated", handleStateUpdated);
     socket.emit("gameWatch", { auth, payload: gameId });
 
@@ -66,6 +82,8 @@ export default function useSocketsForGame(gameId: string, initialPlayers: SafeUs
       socket.off("gameWatched", handleWatched);
       socket.off("gamePlayersUpdated", handlePlayersUpdated);
       socket.off("gameScoresUpdated", handleScoresUpdated);
+      socket.off("gameTimerStarted", handleTimerStarted);
+      socket.off("gameTimerUpdated", handleTimerUpdated);
       socket.off("gameStateUpdated", handleStateUpdated);
     };
   }, [gameId, socket, userPlayerIndex, auth]);
@@ -82,6 +100,8 @@ export default function useSocketsForGame(gameId: string, initialPlayers: SafeUs
     hasWatched,
     players,
     scores,
+    timer,
+    timerStartedSignal,
     userPlayerIndex,
     view,
     joinGame,
