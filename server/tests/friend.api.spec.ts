@@ -250,14 +250,20 @@ describe("POST /api/friend/respond", () => {
     expect(dm0.status).toBe(200);
     const dm0Participants = (dm0.body as { participants: string[] }[]).map((d) => d.participants);
     expect(dm0Participants).toContainEqual(
-      expect.arrayContaining([auth0.username, auth3.username]),
+      expect.arrayContaining([
+        expect.objectContaining({ username: auth0.username }),
+        expect.objectContaining({ username: auth3.username }),
+      ]),
     );
 
     const dm3 = await supertest(app).get("/api/dm/list/user3").set("x-password", auth3.password);
     expect(dm3.status).toBe(200);
     const dm3Participants = (dm3.body as { participants: string[] }[]).map((d) => d.participants);
     expect(dm3Participants).toContainEqual(
-      expect.arrayContaining([auth0.username, auth3.username]),
+      expect.arrayContaining([
+        expect.objectContaining({ username: auth0.username }),
+        expect.objectContaining({ username: auth3.username }),
+      ]),
     );
   });
 
@@ -276,14 +282,20 @@ describe("POST /api/friend/respond", () => {
     expect(dm0.status).toBe(200);
     const dm0Participants = (dm0.body as { participants: string[] }[]).map((d) => d.participants);
     expect(dm0Participants).not.toContainEqual(
-      expect.arrayContaining([auth0.username, auth3.username]),
+      expect.arrayContaining([
+        expect.objectContaining({ username: auth0.username }),
+        expect.objectContaining({ username: auth3.username }),
+      ]),
     );
 
     const dm3 = await supertest(app).get("/api/dm/list/user3").set("x-password", auth3.password);
     expect(dm3.status).toBe(200);
     const dm3Participants = (dm3.body as { participants: string[] }[]).map((d) => d.participants);
     expect(dm3Participants).not.toContainEqual(
-      expect.arrayContaining([auth0.username, auth3.username]),
+      expect.arrayContaining([
+        expect.objectContaining({ username: auth0.username }),
+        expect.objectContaining({ username: auth3.username }),
+      ]),
     );
   });
 });

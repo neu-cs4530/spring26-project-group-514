@@ -2,20 +2,17 @@ import "./SideBarNav.css";
 import { useState } from "react";
 import { NavLink, type NavLinkRenderProps } from "react-router-dom";
 import useAuth from "../hooks/useAuth.ts";
+import useNotifications from "../hooks/useNotifications.ts";
+import NotificationBadge from "./NotificationBadge.tsx";
 
-/**
- * The SideBarNav component contains the primary naviagation menu. It
- * highlights the currently selected page and triggers navigation when the
- * menu items are clicked.
- */
 export default function SideBarNav() {
   const [showOptions, setShowOptions] = useState<boolean>(false);
   const { username } = useAuth();
+  const { friendRequestCount, totalUnreadMessages } = useNotifications();
 
   const toggleOptions = () => {
     setShowOptions(!showOptions);
   };
-
   const navClass = ({ isActive }: NavLinkRenderProps) =>
     `menu_button ${isActive ? "menu_selected" : ""}`;
 
@@ -49,9 +46,11 @@ export default function SideBarNav() {
       </NavLink>
       <NavLink to="/friends" className={navClass}>
         Friends
+        <NotificationBadge count={friendRequestCount} />
       </NavLink>
       <NavLink to="/dm" className={navClass}>
         Messages
+        <NotificationBadge count={totalUnreadMessages} />
       </NavLink>
     </div>
   );

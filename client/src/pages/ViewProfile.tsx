@@ -8,6 +8,8 @@ import useBlockList from "../hooks/useBlockList.ts";
 import ConfirmModal from "../components/ConfirmModal";
 import "./ViewProfile.css";
 import { BlockedIcon, CheckIcon, CrossIcon } from "../components/Icons";
+import useActionError from "../hooks/useActionError.ts";
+import ActionErrorBanner from "../components/ActionErrorBanner.tsx";
 
 interface ViewProfileProps {
   username: string;
@@ -18,13 +20,13 @@ export default function ViewProfile({ username }: ViewProfileProps) {
     { type: "waiting" } | { type: "error"; msg: string } | { type: "profile"; user: SafeUserInfo }
   >({ type: "waiting" });
   const [showBlockConfirm, setShowBlockConfirm] = useState(false);
-  const [actionError, setActionError] = useState<string | null>(null);
   const timeSince = useTimeSince();
   const { blockedSet, blockUser, unblockUser } = useBlockList();
-  const isBlocked = blockedSet.has(username);
-
   const { friends } = useFriendList();
   const { incoming, outgoing, sendRequest, acceptRequest, declineRequest } = useFriendRequests();
+  const { actionError, setActionError } = useActionError();
+
+  const isBlocked = blockedSet.has(username);
 
   const isAlreadyFriend = !("message" in friends) && friends.some((f) => f.username === username);
 
@@ -43,12 +45,6 @@ export default function ViewProfile({ username }: ViewProfileProps) {
       : incomingRequest
         ? "incoming"
         : "idle";
-
-  useEffect(() => {
-    if (!actionError) return;
-    const timer = setTimeout(() => setActionError(null), 4000);
-    return () => clearTimeout(timer);
-  }, [actionError]);
 
   useEffect(() => {
     let cancel = false;
@@ -184,7 +180,7 @@ export default function ViewProfile({ username }: ViewProfileProps) {
               onCancel={() => setShowBlockConfirm(false)}
             />
           )}
-          {actionError && <div className="action-error-banner">{actionError}</div>}
+          {actionError && <ActionErrorBanner error={actionError} />}
           <div className="profile-actions">
             {renderFriendAction()}
             <button

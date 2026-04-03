@@ -11,11 +11,11 @@ export default function FriendSummaryView({
   display,
   createdAt,
   onRemove,
-}: SafeUserInfo & { onRemove: (username: string) => void }) {
+}: SafeUserInfo & { onRemove: (user: SafeUserInfo) => void }) {
   return (
     <div key={username} role="listitem">
       <UserLink user={{ username, display, createdAt }} />
-      <button className="danger narrow" onClick={() => onRemove(username)}>
+      <button className="danger narrow" onClick={() => onRemove({ username, display, createdAt })}>
         Remove
       </button>
     </div>

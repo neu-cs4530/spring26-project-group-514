@@ -1,4 +1,5 @@
 import { type MessageInfo } from "./message.types.ts";
+import type { SafeUserInfo } from "./user.types.ts";
 
 /**
  * Represents client's direct chat with each other:
@@ -22,9 +23,12 @@ export interface DirectChatInfo {
  */
 export interface DirectChatSummary {
   directChatId: string; // ID to referencing to DirectChatInfo
-  participants: [string, string];
+  participants: [SafeUserInfo, SafeUserInfo];
   createdAt: Date;
+  unreadCount: number;
+  lastMessageAt: Date | null;
 }
+
 /**
  * Payload emitted when a new message is sent in a DM conversation.
  * - `chatId`: the ID of the DM conversation

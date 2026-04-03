@@ -14,7 +14,7 @@ import useAuth from "./useAuth.ts";
  */
 export default function useFriendList(): {
   friends: { message: string } | SafeUserInfo[];
-  removeFriend: (targetUsername: string) => Promise<void>;
+  removeFriend: (targetUsername: string) => Promise<string | null>;
 } {
   const { user, socket } = useLoginContext();
   const auth = useAuth();
@@ -74,12 +74,14 @@ export default function useFriendList(): {
     };
   }, [socket]);
 
-  const removeFriend = async (targetUsername: string) => {
+  // removeFriend: return error or null on success
+  const removeFriend = async (targetUsername: string): Promise<string | null> => {
     const result = await removeFriendRequest(auth, targetUsername);
-    if (!result || "error" in result) return;
+    if (!result || "error" in result) return result?.error ?? "Unkown Error";
     setFriends((prev) =>
       Array.isArray(prev) ? prev.filter((f) => f.username !== targetUsername) : prev,
     );
+    return null;
   };
 
   if (!friends) return { friends: { message: "Loading..." }, removeFriend };

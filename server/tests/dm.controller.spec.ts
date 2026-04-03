@@ -44,10 +44,12 @@ afterEach(() => {
 async function seedDm(): Promise<string> {
   const user0 = (await getUserByUsername("user0"))!;
   const user1 = (await getUserByUsername("user1"))!;
+  const now = new Date().toISOString();
   const chatId = await DirectChatRepo.add({
     participants: [user0.userId, user1.userId],
     messages: [],
-    createdAt: new Date().toISOString(),
+    createdAt: now,
+    lastReadAt: { [user0.userId]: now, [user1.userId]: now },
   });
   const user0Rec = await UserRepo.get(user0.userId);
   const user1Rec = await UserRepo.get(user1.userId);
@@ -158,12 +160,21 @@ describe("socketDmSendMessage", () => {
       payload: { chatId, text: "hello" },
     });
     expect(logSocketError).not.toHaveBeenCalled();
-    expect(mockServer.to).toHaveBeenCalledExactlyOnceWith(chatId);
-    expect(mockServer.emit).toHaveBeenCalledExactlyOnceWith(
+
+    expect(mockServer.to).toHaveBeenCalledWith(chatId);
+    expect(mockServer.to).toHaveBeenCalledWith(`user:user1`);
+    expect(mockServer.emit).toHaveBeenCalledWith(
       "dmNewMessage",
       expect.objectContaining({
         chatId,
         message: expect.objectContaining({ text: "hello" }),
+      }),
+    );
+    expect(mockServer.emit).toHaveBeenCalledWith(
+      "dmUnreadNotification",
+      expect.objectContaining({
+        chatId,
+        lastMessageAt: expect.anything(),
       }),
     );
   });

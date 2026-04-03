@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import useLoginContext from "./useLoginContext.ts";
 import useAuth from "./useAuth.ts";
 import type { DirectChatInfo, DmNewMessagePayload, MessageInfo } from "@gamenite/shared";
+import useNotifications from "./useNotifications.ts";
 
 /**
  * Custom hook to manage the socket connection for a direct message conversation.
@@ -17,6 +18,7 @@ export default function useSocketsForDM(chatId: string): {
 } {
   const auth = useAuth();
   const { socket } = useLoginContext();
+  const { clearActiveDm } = useNotifications();
   const [messages, setMessages] = useState<MessageInfo[] | null>(null);
 
   useEffect(() => {
@@ -43,8 +45,9 @@ export default function useSocketsForDM(chatId: string): {
       socket.off("dmJoined", handleDMJoined);
       socket.off("dmNewMessage", handleNewMessage);
       socket.emit("dmLeave", { auth, payload: chatId });
+      clearActiveDm();
     };
-  }, [socket, auth, chatId]);
+  }, [socket, auth, chatId, clearActiveDm]);
 
   function handleMessageCreation(text: string) {
     socket.emit("dmSendMessage", { auth, payload: { chatId, text } });
