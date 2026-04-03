@@ -101,6 +101,16 @@ describe("GET /api/lobby/list and GET /api/lobby/:id", () => {
 });
 
 describe("POST /api/lobby/invited", () => {
+  it("returns 400 on malformed payload", async () => {
+    response = await supertest(app).post("/api/lobby/invited").send({ auth: auth1, payload: 1 });
+    expect(response.status).toBe(400);
+  });
+
+  it("returns 403 with invalid auth", async () => {
+    response = await supertest(app).post("/api/lobby/invited").send({ auth: authBad, payload: {} });
+    expect(response.status).toBe(403);
+  });
+
   it("returns only pending invited lobbies for the authenticated user", async () => {
     const invitedLobby = await supertest(app)
       .post("/api/lobby/create")

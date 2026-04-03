@@ -100,16 +100,21 @@ export async function getPublicLobbies(): Promise<LobbyInfo[]> {
  */
 export async function getInvitedLobbies(user: UserWithId): Promise<LobbyInfo[]> {
   const keys = await LobbyRepo.getAllKeys();
-  const all = await Promise.all(keys.map(populateLobbyInfo));
-  return all
-    .filter(
-      (lobby) =>
-        !lobby.startedGameId &&
-        lobby.players.some(
-          (player) => player.user.username === user.username && player.status === "pending",
-        ),
-    )
-    .toSorted((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  const invitedKeys: string[] = [];
+
+  for (const key of keys) {
+    const lobby = await LobbyRepo.get(key);
+    const isInvited = lobby.players.some(
+      (player) => player.userId === user.userId && player.status === "pending",
+    );
+
+    if (!lobby.startedGameId && isInvited) {
+      invitedKeys.push(key);
+    }
+  }
+
+  const invited = await Promise.all(invitedKeys.map(populateLobbyInfo));
+  return invited.toSorted((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 }
 
 /**
