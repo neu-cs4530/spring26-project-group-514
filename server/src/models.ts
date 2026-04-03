@@ -77,6 +77,8 @@ export interface GameRecord {
   done: boolean;
   chat: RecordId; // References Chat records
   players: RecordId[]; // References User records
+  timerDurationSeconds?: number | null;
+  timerEndsAt?: DateISO;
   createdAt: DateISO;
   createdBy: RecordId; // References User records
 }
@@ -86,6 +88,7 @@ export interface GameHistoryRecord {
   state: unknown;
   players: RecordId[]; // References User records
   endedAt: DateISO;
+  endedByTimer?: boolean;
 }
 
 /**
@@ -194,6 +197,9 @@ export interface PlayerStatsRecord {
   losses: number;
   gamesPlayed: number;
   winRate: number;
+  badges: string[];
+  currentWinStreak: number;
+  bestWinStreak: number;
   leaderboardOptOut: boolean;
   lastPlayedAt: DateISO;
 }

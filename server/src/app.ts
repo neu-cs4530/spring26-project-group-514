@@ -57,6 +57,7 @@ app.use(
         .post("/create", lobby.postCreate)
         .post("/join-by-code", lobby.postJoinByCode)
         .get("/list", lobby.getList)
+        .post("/invited", lobby.postInvited)
         .get("/:id", lobby.getById)
         .post("/:id/invite", lobby.postInvite)
         .post("/:id/join", lobby.postJoin)

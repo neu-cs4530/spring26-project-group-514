@@ -1,19 +1,23 @@
 import type { ErrorMsg, LobbyInfo } from "@gamenite/shared";
 import { useEffect, useState } from "react";
-import { getLobbyList } from "../services/lobbyService.ts";
+import useAuth from "./useAuth.ts";
+import { getInvitedLobbyList, getLobbyList } from "../services/lobbyService.ts";
 
 /**
- * This retrieves public lobby list for the lobby browser page.
+ * This retrieves public and invited lobby lists for the lobby browser page.
  */
-export default function useLobbyList(): { message: string } | LobbyInfo[] {
-  const [lobbies, setLobbies] = useState<LobbyInfo[] | ErrorMsg | null>(null);
+export default function useLobbyList(): {
+  publicLobbies: LobbyInfo[] | ErrorMsg | null;
+  invitedLobbies: LobbyInfo[] | ErrorMsg | null;
+} {
+  const auth = useAuth();
+  const [publicLobbies, setPublicLobbies] = useState<LobbyInfo[] | ErrorMsg | null>(null);
+  const [invitedLobbies, setInvitedLobbies] = useState<LobbyInfo[] | ErrorMsg | null>(null);
 
   useEffect(() => {
-    getLobbyList().then(setLobbies);
-  }, []);
+    getLobbyList().then(setPublicLobbies);
+    getInvitedLobbyList(auth).then(setInvitedLobbies);
+  }, [auth]);
 
-  if (!lobbies) return { message: "Loading..." };
-  if ("error" in lobbies) return { message: `Error: ${lobbies.error}` };
-  if (lobbies.length === 0) return { message: "No public lobbies found..." };
-  return lobbies;
+  return { publicLobbies, invitedLobbies };
 }

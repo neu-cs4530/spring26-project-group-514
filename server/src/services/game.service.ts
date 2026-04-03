@@ -3,6 +3,7 @@ import {
   type GameKey,
   type GamePlayerScore,
   type GameScoresPayload,
+  type GameTimerPayload,
   type GuessState,
   type NimState,
   type TaggedGameView,
@@ -92,6 +93,7 @@ export async function createGame(
   user: UserWithId,
   type: GameKey,
   createdAt: Date,
+  timerDurationSeconds: number | null = 300,
 ): Promise<GameInfo> {
   const chat = await createChat(createdAt);
   const gameId = await GameRepo.add({
@@ -101,6 +103,7 @@ export async function createGame(
     createdAt: createdAt.toISOString(),
     createdBy: user.userId,
     players: [user.userId],
+    timerDurationSeconds,
   });
   return populateGameInfo(gameId);
 }
@@ -173,6 +176,9 @@ export async function startGame(gameId: string, user: UserWithId): Promise<GameV
   const { state, views } = gameServices[key].create(game.players);
 
   game.state = state;
+  if (game.timerDurationSeconds && game.timerDurationSeconds > 0) {
+    game.timerEndsAt = new Date(Date.now() + game.timerDurationSeconds * 1000).toISOString();
+  }
   await GameRepo.set(gameId, game);
 
   return Promise.resolve(views);
@@ -207,6 +213,63 @@ export async function getGameScores(gameId: string): Promise<GameScoresPayload> 
   };
 }
 
+export async function getGameTimer(gameId: string): Promise<GameTimerPayload | null> {
+  const game = await GameRepo.find(gameId);
+  if (!game || !game.timerDurationSeconds || !game.timerEndsAt) {
+    return null;
+  }
+
+  const remainingSeconds = Math.max(
+    0,
+    Math.ceil((new Date(game.timerEndsAt).getTime() - Date.now()) / 1000),
+  );
+
+  return {
+    gameId,
+    remainingSeconds,
+    isRunning: !!game.state && !game.done && remainingSeconds > 0,
+  };
+}
+
+function buildViewsFromCurrentState(game: {
+  type: GameKey;
+  state: unknown;
+  players: string[];
+}): GameViewUpdates {
+  return {
+    watchers: gameServices[game.type].view(game.state, -1),
+    players: game.players.map((userId, playerIndex) => ({
+      userId,
+      view: gameServices[game.type].view(game.state, playerIndex),
+    })),
+  };
+}
+
+export async function expireGameByTimer(gameId: string): Promise<GameUpdateResult | null> {
+  const game = await GameRepo.find(gameId);
+  if (!game || !game.state || game.done) {
+    return null;
+  }
+
+  game.done = true;
+  await GameRepo.set(gameId, game);
+
+  await GameHistoryRepo.set(gameId, {
+    type: game.type,
+    players: game.players,
+    endedAt: new Date().toISOString(),
+    state: game.state,
+    endedByTimer: true,
+  });
+
+  return {
+    views: buildViewsFromCurrentState(game as { type: GameKey; state: unknown; players: string[] }),
+    moveDescription: "timer expired",
+    chatId: game.chat,
+    done: true,
+  };
+}
+
 /**
  * Represents the result of a game update, including view updates and the
  * move description suffix (the display name is prepended by the caller).
@@ -215,6 +278,7 @@ export interface GameUpdateResult {
   views: GameViewUpdates;
   moveDescription: string;
   chatId: string;
+  done?: boolean;
 }
 
 /**
@@ -261,6 +325,7 @@ export async function updateGame(
     views: result.views,
     moveDescription: result.moveDescription,
     chatId: game.chat,
+    done: game.done,
   };
 }
 
