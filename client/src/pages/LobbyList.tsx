@@ -2,13 +2,12 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useLobbyList from "../hooks/useLobbyList.ts";
 import useAuth from "../hooks/useAuth.ts";
-import { joinLobbyByCode, joinLobbyById } from "../services/lobbyService.ts";
-import "./LobbyList.css";
+import { joinLobbyByCode } from "../services/lobbyService.ts";
 
 export default function LobbyList() {
   const auth = useAuth();
   const navigate = useNavigate();
-  const { publicLobbies, invitedLobbies } = useLobbyList();
+  const lobbies = useLobbyList();
   const [code, setCode] = useState("");
   const [err, setErr] = useState<string | null>(null);
 
@@ -51,15 +50,11 @@ export default function LobbyList() {
 
       <div className="spacedSection">
         <h3>Public Lobbies</h3>
-        {!publicLobbies ? (
-          <div>Loading...</div>
-        ) : "error" in publicLobbies ? (
-          <div>{publicLobbies.error}</div>
-        ) : publicLobbies.length === 0 ? (
-          <div>No public lobbies found...</div>
+        {"message" in lobbies ? (
+          <div>{lobbies.message}</div>
         ) : (
           <div className="dottedList" role="list">
-            {publicLobbies.map((lobby) => (
+            {lobbies.map((lobby) => (
               <div className="dottedListItem" role="listitem" key={lobby.lobbyId}>
                 <div>
                   {lobby.type} lobby by {lobby.createdBy.username}
@@ -72,43 +67,6 @@ export default function LobbyList() {
                   onClick={() => navigate(`/lobby/${lobby.lobbyId}`)}
                 >
                   Open
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="spacedSection">
-        <h3>Invited Lobbies</h3>
-        {!invitedLobbies ? (
-          <div>Loading...</div>
-        ) : "error" in invitedLobbies ? (
-          <div>{invitedLobbies.error}</div>
-        ) : invitedLobbies.length === 0 ? (
-          <div>No lobby invitations found...</div>
-        ) : (
-          <div className="dottedList" role="list">
-            {invitedLobbies.map((lobby) => (
-              <div className="dottedListItem" role="listitem" key={lobby.lobbyId}>
-                <div>
-                  {lobby.type} lobby by {lobby.createdBy.username}
-                </div>
-                <div>
-                  {lobby.players.filter((p) => p.status === "joined").length} players joined
-                </div>
-                <button
-                  className="secondary narrow lobbyListJoinButton"
-                  onClick={async () => {
-                    const result = await joinLobbyById(auth, lobby.lobbyId);
-                    if ("error" in result) {
-                      setErr(result.error);
-                      return;
-                    }
-                    navigate(`/lobby/${result.lobbyId}`);
-                  }}
-                >
-                  join
                 </button>
               </div>
             ))}

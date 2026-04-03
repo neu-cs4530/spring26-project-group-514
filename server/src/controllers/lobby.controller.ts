@@ -13,7 +13,6 @@ import {
   createLobby,
   declineInvite,
   getLobbyById,
-  getInvitedLobbies,
   getPublicLobbies,
   invitePlayer,
   joinLobby,
@@ -38,8 +37,8 @@ async function createGameFromLobby(
   lobbyId: string,
   host: { userId: string; username: string },
 ) {
-  const { type, playerIds, timerSeconds } = await startLobby(lobbyId, host);
-  const game = await createGame(host, type, new Date(), timerSeconds);
+  const { type, playerIds } = await startLobby(lobbyId, host);
+  const game = await createGame(host, type, new Date());
 
   for (const playerId of playerIds) {
     if (playerId === host.userId) continue;
@@ -84,22 +83,6 @@ export const postCreate: RestAPI<LobbyInfo> = async (req, res) => {
 /** GET /api/lobby/list */
 export const getList: RestAPI<LobbyInfo[]> = async (_req, res) => {
   res.send(await getPublicLobbies());
-};
-
-/** POST /api/lobby/invited */
-export const postInvited: RestAPI<LobbyInfo[]> = async (req, res) => {
-  const body = parseEmptyPayload(req.body);
-  if (body.error) {
-    res.status(400).send({ error: "Poorly-formed request" });
-    return;
-  }
-  const user = await checkAuth(body.data.auth);
-  if (!user) {
-    res.status(403).send({ error: "Invalid credentials" });
-    return;
-  }
-
-  res.send(await getInvitedLobbies(user));
 };
 
 /** GET /api/lobby/:id */

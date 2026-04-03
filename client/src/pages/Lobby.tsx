@@ -5,48 +5,10 @@ import useFriendList from "../hooks/useFriendList.ts";
 import UserLink from "../components/UserLink.tsx";
 import ChatPanel from "../components/ChatPanel.tsx";
 
-const TIMER_PRESETS_KEY = "gamenite:lobbyTimerPresets";
-
-interface TimerPreset {
-  name: string;
-  seconds: number;
-}
-
-function loadTimerPresets(): TimerPreset[] {
-  try {
-    const raw = localStorage.getItem(TIMER_PRESETS_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return [];
-
-    return parsed
-      .filter((entry): entry is TimerPreset => {
-        if (!entry || typeof entry !== "object") return false;
-        const maybeEntry = entry as Record<string, unknown>;
-        return (
-          typeof maybeEntry.name === "string" &&
-          typeof maybeEntry.seconds === "number" &&
-          Number.isFinite(maybeEntry.seconds) &&
-          maybeEntry.seconds > 0
-        );
-      })
-      .map((entry) => ({ name: entry.name.trim(), seconds: Math.floor(entry.seconds) }))
-      .filter((entry) => entry.name.length > 0);
-  } catch {
-    return [];
-  }
-}
-
-function saveTimerPresets(presets: TimerPreset[]) {
-  localStorage.setItem(TIMER_PRESETS_KEY, JSON.stringify(presets));
-}
-
 export default function Lobby() {
   const { lobbyId } = useParams();
   const navigate = useNavigate();
   const [inviteUsername, setInviteUsername] = useState("");
-  const [presetName, setPresetName] = useState("");
-  const [timerPresets, setTimerPresets] = useState<TimerPreset[]>(() => loadTimerPresets());
 
   const {
     lobby,
@@ -68,38 +30,6 @@ export default function Lobby() {
     () => lobby?.players.filter((p) => p.status === "joined").length ?? 0,
     [lobby],
   );
-
-  function setNoTimerMode(enabled: boolean) {
-    if (!lobby) return;
-    updateSettings({
-      ...lobby.settings,
-      timerSeconds: enabled ? null : (lobby.settings.timerSeconds ?? 60),
-    });
-  }
-
-  function applyTimerPreset(seconds: number) {
-    if (!lobby) return;
-    updateSettings({
-      ...lobby.settings,
-      timerSeconds: seconds,
-    });
-  }
-
-  function addTimerPreset() {
-    if (!lobby) return;
-    const name = presetName.trim();
-    const seconds = lobby.settings.timerSeconds;
-    if (!name || seconds === null || seconds <= 0) return;
-
-    const next = [
-      ...timerPresets.filter((preset) => preset.name.toLowerCase() !== name.toLowerCase()),
-      { name, seconds },
-    ];
-
-    setTimerPresets(next);
-    saveTimerPresets(next);
-    setPresetName("");
-  }
 
   useEffect(() => {
     if (startedGameId) {
@@ -217,7 +147,6 @@ export default function Lobby() {
                 type="number"
                 min={1}
                 value={lobby.settings.timerSeconds ?? ""}
-                disabled={lobby.settings.timerSeconds === null}
                 onChange={(e) => {
                   const value = e.target.value.trim();
                   updateSettings({
@@ -227,46 +156,6 @@ export default function Lobby() {
                 }}
               />
             </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={lobby.settings.timerSeconds === null}
-                onChange={(e) => setNoTimerMode(e.target.checked)}
-              />
-              No Timer Mode
-            </label>
-          </div>
-
-          <div className="alignCenter">
-            <label>
-              Preset
-              <select
-                aria-label="Timer preset"
-                value=""
-                onChange={(e) => {
-                  const value = e.target.value;
-                  if (!value) return;
-                  applyTimerPreset(Number(value));
-                }}
-              >
-                <option value="">- Select preset -</option>
-                {timerPresets.map((preset) => (
-                  <option key={preset.name} value={preset.seconds}>
-                    {preset.name} ({preset.seconds}s)
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <input
-              value={presetName}
-              onChange={(e) => setPresetName(e.target.value)}
-              placeholder="Preset name"
-              aria-label="Preset name"
-            />
-            <button className="secondary narrow" onClick={addTimerPreset}>
-              Save Preset
-            </button>
           </div>
         </div>
       )}

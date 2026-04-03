@@ -11,7 +11,6 @@ import {
   type GameMakeMovePayload,
   type GamePlayInfo,
   type GameScoresPayload,
-  type GameTimerPayload,
   type TaggedGameView,
 } from "./game.types.ts";
 import { type FriendRequest } from "./friend.types.ts";
@@ -60,8 +59,6 @@ export interface ServerToClientEvents {
   friendRequestUpdated: (request: FriendRequest) => void;
   gamePlayersUpdated: (payload: SafeUserInfo[]) => void;
   gameScoresUpdated: (payload: GameScoresPayload) => void;
-  gameTimerStarted: (payload: GameTimerPayload) => void;
-  gameTimerUpdated: (payload: GameTimerPayload) => void;
   gameStateUpdated: (payload: TaggedGameView & { forPlayer: boolean }) => void;
   gameWatched: (payload: GamePlayInfo) => void;
   dmJoined: (payload: DirectChatInfo) => void;
