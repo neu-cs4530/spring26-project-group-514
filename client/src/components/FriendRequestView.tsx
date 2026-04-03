@@ -1,5 +1,7 @@
 import type { FriendRequest } from "@gamenite/shared";
 import useTimeSince from "../hooks/useTimeSince.ts";
+import UserLink from "./UserLink.tsx";
+import { CheckIcon, CrossIcon } from "../components/Icons";
 
 /**
  * Displays a single pending friend request.
@@ -11,38 +13,33 @@ export default function FriendRequestView({
   direction,
   onAccept,
   onDecline,
-  onCancel,
 }: {
   request: FriendRequest;
   direction: "incoming" | "outgoing";
   onAccept?: (requestId: string) => void;
   onDecline?: (requestId: string) => void;
-  onCancel?: (requestId: string) => void;
 }) {
   const timeSince = useTimeSince();
   const displayName = direction === "incoming" ? request.fromUser : request.toUser;
 
   return (
-    <div className="dottedListItem" role="listitem">
+    <div role="listitem">
       <div>
-        <strong>{displayName}</strong>
+        <UserLink user={displayName} />
         <span className="smallAndGray"> · {timeSince(request.createdAt)}</span>
       </div>
       {direction === "incoming" ? (
-        <div>
+        <div style={{ display: "flex", gap: "8px" }}>
           <button className="primary narrow" onClick={() => onAccept?.(request.id)}>
-            Accept
+            <CheckIcon />
           </button>
           <button className="secondary narrow" onClick={() => onDecline?.(request.id)}>
-            Decline
+            <CrossIcon />
           </button>
         </div>
       ) : (
         <div>
           <span className="smallAndGray">Pending...</span>
-          <button className="secondary narrow" onClick={() => onCancel?.(request.id)}>
-            Cancel
-          </button>
         </div>
       )}
     </div>

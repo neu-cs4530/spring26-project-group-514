@@ -65,4 +65,7 @@ export interface ServerToClientEvents {
   dmNewMessage: (payload: DmNewMessagePayload) => void;
   lobbyUpdated: (payload: LobbyInfo) => void;
   lobbyStarted: (payload: { lobbyId: string; gameId: string }) => void;
+  userBlocked: (payload: SafeUserInfo) => void;
+  userUnblocked: (payload: SafeUserInfo) => void;
+  friendRemoved: (removedBy: SafeUserInfo) => void;
 }

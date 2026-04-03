@@ -1,0 +1,42 @@
+.leaderboard-filters {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.leaderboard-table th {
+  text-align: left;
+  padding: 0.5rem;
+  border-bottom: 2px solid #333;
+  font-size: 0.85rem;
+  color: var(--gray-foreground);
+}
+
+.leaderboard-table th.centered,
+.leaderboard-table td.centered {
+  text-align: center;
+}
+
+.leaderboard-row {
+  cursor: pointer;
+}
+
+.leaderboard-row:hover {
+  background-color: var(--gray-background);
+}
+
+.leaderboard-row td {
+  padding: 0.5rem;
+  border-bottom: 1px dashed #ccc;
+}
+
+.leaderboard-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}

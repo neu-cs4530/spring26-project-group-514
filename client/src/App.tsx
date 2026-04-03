@@ -25,6 +25,8 @@ import DirectChatPage from "./pages/DirectChatPage.tsx";
 import LobbyList from "./pages/LobbyList.tsx";
 import NewLobby from "./pages/NewLobby.tsx";
 import Lobby from "./pages/Lobby.tsx";
+import Leaderboard from "./pages/Leaderboard.tsx";
+import MatchHistory from "./pages/MatchHistory.tsx";
 
 /** If this is set to `true`, all incoming socket messages will be logged */
 const DEBUG_SOCKETS = false;
@@ -77,6 +79,8 @@ export default function App() {
             <Route path="/lobbies" element={<LobbyList />} />
             <Route path="/lobby/new" element={<NewLobby />} />
             <Route path="/lobby/:lobbyId" element={<Lobby />} />
+            <Route path="/leaderboard" element={<Leaderboard />} />
+            <Route path="/match-history" element={<MatchHistory />} />
             <Route path="/games" element={<GameList />} />
             <Route path="/game/new" element={<NewGame />} />
             <Route path="/game/:gameId" element={<Game />} />

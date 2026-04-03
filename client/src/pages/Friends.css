@@ -1,0 +1,31 @@
+.friends-page .outline {
+  background-color: transparent;
+  color: #6c757d;
+  border: 1px solid #6c757d;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+}
+
+.friends-page .outline:hover {
+  background-color: #6c757d;
+  color: #fff;
+}
+
+.danger {
+  background-color: #dc3545;
+  color: #fff;
+  border: none;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+}
+
+.danger:hover {
+  background-color: #b02a37;
+}
+
+.friends-page .dottedList > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+}

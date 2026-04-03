@@ -1,0 +1,65 @@
+.history-filters {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.history-filters select,
+.history-filters input {
+  border-radius: 0.5rem;
+  border: 1px solid var(--gray-foreground);
+  min-height: 2.5rem;
+  padding-inline: 0.5rem;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.history-table th {
+  text-align: left;
+  padding: 0.5rem;
+  border-bottom: 2px solid #333;
+  font-size: 0.85rem;
+  color: var(--gray-foreground);
+}
+
+.history-row td {
+  padding: 0.5rem;
+  border-bottom: 1px dashed #ccc;
+}
+
+.result-win {
+  color: green;
+  font-weight: 600;
+}
+
+.result-loss {
+  color: red;
+  font-weight: 600;
+}
+
+.result-draw {
+  color: orange;
+  font-weight: 600;
+}
+
+.player-link {
+  cursor: pointer;
+  color: cornflowerblue;
+  text-decoration: underline;
+  margin-right: 0.5rem;
+}
+
+.player-link:hover {
+  color: oklch(0.45 0.1 260);
+}
+
+.history-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}
