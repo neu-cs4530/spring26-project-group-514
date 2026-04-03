@@ -57,7 +57,7 @@ export default function Friends() {
         {"message" in friends ? (
           <div>{friends.message}</div>
         ) : (
-          <div className="dottedList" role="list">
+          <div className="list" role="list">
             {friends.map((friend) => (
               <FriendSummaryView {...friend} key={friend.username} onRemove={handleRemove} />
             ))}
@@ -70,7 +70,7 @@ export default function Friends() {
         {"message" in incoming ? (
           <div>{incoming.message}</div>
         ) : (
-          <div className="dottedList" role="list">
+          <div className="list" role="list">
             {incoming.map((req) => (
               <FriendRequestView
                 key={req.id}
@@ -89,7 +89,7 @@ export default function Friends() {
         {"message" in outgoing ? (
           <div>{outgoing.message}</div>
         ) : (
-          <div className="dottedList" role="list">
+          <div className="list" role="list">
             {outgoing.map((req) => (
               <FriendRequestView key={req.id} request={req} direction="outgoing" />
             ))}

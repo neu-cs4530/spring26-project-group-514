@@ -4,7 +4,7 @@ import {
   withAuth,
   zNewMessageRequest,
 } from "@gamenite/shared";
-import { addMessageToDm, getDmById, getDmList } from "../services/dm.service.ts";
+import { addMessageToDm, getDmById, getDmList, markDmAsRead } from "../services/dm.service.ts";
 import { type RestAPI, type SocketAPI } from "../types.ts";
 import { checkAuth, enforceAuth } from "../services/auth.service.ts";
 import { z } from "zod";
@@ -81,6 +81,7 @@ export const socketDmJoin: SocketAPI = (socket) => async (body) => {
     }
     await socket.join(dmId);
     socket.emit("dmJoined", chat);
+    await markDmAsRead(dmId, user.userId);
   } catch (err) {
     logSocketError(socket, err);
   }
@@ -122,6 +123,13 @@ export const socketDmSendMessage: SocketAPI = (socket, io) => async (body) => {
     const message = await createMessage(user, text, new Date());
     await addMessageToDm(chatId, message.messageId);
     io.to(chatId).emit("dmNewMessage", { chatId, message });
+    const otherUsername = chat.participants.find((p) => p !== user.username);
+    if (otherUsername) {
+      io.to(`user:${otherUsername}`).emit("dmUnreadNotification", {
+        chatId,
+        lastMessageAt: message.createdAt,
+      });
+    }
   } catch (err) {
     logSocketError(socket, err);
   }

@@ -1,5 +1,24 @@
-.directChatSummary {
+.directChatSummary {                                                                                                                                                                        
+  display: flex;                                                                                                                                                                            
+  align-items: center;                                                                                                                                                                      
+  gap: 1rem;                                                                                                                                                                                
+  padding: 0.75rem 1rem;                                                                                                                                                                    
+  text-decoration: none;                                                                                                                                                                    
+  color: inherit;                                                                                                                                                                           
+  border-radius: 0.5rem;                                                                                                                                                                    
+}                                                                                                                                                                                           
+                                                                                                                                                                                            
+.directChatSummary:hover {                                                                                                                                                                  
+  background-color: #cccccc;                                                                                                                                                                
+}                                                                                                                                                                                           
+                                                                                                                                                                                        
+.directChatSummary-info {
   display: flex;
-  align-items: center;
-  gap: 1rem;
+  flex-direction: column;
+  flex: 1;                                                                                                                                                                                  
+  min-width: 0;                                                                                                                                                                             
+}                                                                                                                                                                                           
+                                                                                                                                                                                            
+.directChatSummary-name {                                                                                                                                                                   
+  font-weight: 600;                                                                                                                                                                     
 }
