@@ -1,6 +1,6 @@
 import type { AchievementBadge, SafeUserInfo } from "@gamenite/shared";
 import { useEffect, useState } from "react";
-import {getUserById, getUserBadges } from "../services/userService
+import {getUserById, getUserBadges } from "../services/userService";
 import useTimeSince from "../hooks/useTimeSince";
 import useFriendList from "../hooks/useFriendList.ts";
 import useFriendRequests from "../hooks/useFriendRequests.ts";
