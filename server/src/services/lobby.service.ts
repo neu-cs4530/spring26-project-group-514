@@ -271,7 +271,7 @@ export async function updateLobbySettings(
 export async function startLobby(
   lobbyId: string,
   host: UserWithId,
-): Promise<{ type: GameKey; playerIds: string[] }> {
+): Promise<{ type: GameKey; playerIds: string[]; timerSeconds: number | null }> {
   const lobby = await LobbyRepo.find(lobbyId);
   if (!lobby) throw new Error(`Lobby ${lobbyId} not found`);
   if (lobby.createdBy !== host.userId) throw new Error(`Only the host can start the game`);
@@ -283,6 +283,7 @@ export async function startLobby(
   return {
     type: lobby.type,
     playerIds: joinedPlayers.map((p) => p.userId),
+    timerSeconds: lobby.settings.timerSeconds,
   };
 }
 

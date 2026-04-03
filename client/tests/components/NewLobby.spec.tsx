@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import NewLobby from "../../src/pages/NewLobby.tsx";
 
 const mockedUseNavigate = vi.fn();
+const mockedCreateLobby = vi.hoisted(() => vi.fn());
 vi.mock("react-router-dom", async () => {
   const mod = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
   return { ...mod, useNavigate: () => mockedUseNavigate };
@@ -13,7 +14,6 @@ vi.mock("../../src/hooks/useAuth.ts", () => ({
   default: () => ({ username: "user1", password: "pwd1111" }),
 }));
 
-const mockedCreateLobby = vi.fn();
 vi.mock("../../src/services/lobbyService.ts", () => ({
   createLobby: mockedCreateLobby,
 }));

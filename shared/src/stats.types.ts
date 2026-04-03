@@ -1,3 +1,5 @@
+export type AchievementBadge = "first_win" | "ten_wins" | "win_streak_3" | "leaderboard_placement";
+
 /**
  * Represents a player's stats summary visible to clients.
  */
@@ -8,6 +10,7 @@ export interface PlayerStats {
   losses: number;
   gamesPlayed: number;
   winRate: number;
+  badges: AchievementBadge[];
 }
 
 /**

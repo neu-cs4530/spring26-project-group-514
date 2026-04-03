@@ -45,7 +45,6 @@ export default function Lobby() {
   const { lobbyId } = useParams();
   const navigate = useNavigate();
   const [inviteUsername, setInviteUsername] = useState("");
-  const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
   const [presetName, setPresetName] = useState("");
   const [timerPresets, setTimerPresets] = useState<TimerPreset[]>(() => loadTimerPresets());
 
@@ -64,18 +63,11 @@ export default function Lobby() {
   } = useSocketsForLobby(lobbyId!);
 
   const { friends } = useFriendList();
-  const lobbyLink = useMemo(() => `${window.location.origin}/lobby/${lobbyId}`, [lobbyId]);
 
   const joinedCount = useMemo(
     () => lobby?.players.filter((p) => p.status === "joined").length ?? 0,
     [lobby],
   );
-
-  useEffect(() => {
-    if (!copyFeedback) return;
-    const timeout = setTimeout(() => setCopyFeedback(null), 2000);
-    return () => clearTimeout(timeout);
-  }, [copyFeedback]);
 
   function setNoTimerMode(enabled: boolean) {
     if (!lobby) return;
@@ -107,15 +99,6 @@ export default function Lobby() {
     setTimerPresets(next);
     saveTimerPresets(next);
     setPresetName("");
-  }
-
-  async function copyLobbyLink() {
-    try {
-      await navigator.clipboard.writeText(lobbyLink);
-      setCopyFeedback("Copied link");
-    } catch {
-      setCopyFeedback("Unable to copy");
-    }
   }
 
   useEffect(() => {
@@ -161,13 +144,6 @@ export default function Lobby() {
       {isHost && (
         <div className="spacedSection">
           <h3>Invite Players</h3>
-          <div className="alignCenter">
-            <input value={lobbyLink} readOnly aria-label="Lobby invite link" />
-            <button className="primary narrow" onClick={copyLobbyLink}>
-              Copy Link
-            </button>
-          </div>
-          {copyFeedback && <div className="smallAndGray">{copyFeedback}</div>}
           <div className="alignCenter">
             <input
               value={inviteUsername}

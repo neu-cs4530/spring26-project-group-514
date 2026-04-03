@@ -78,19 +78,6 @@ describe("Lobby page", () => {
     localStorage.clear();
   });
 
-  it("copies lobby invite link", () => {
-    const writeText = vi.fn().mockResolvedValue(undefined);
-    Object.defineProperty(navigator, "clipboard", {
-      value: { writeText },
-      configurable: true,
-    });
-
-    render(<Lobby />);
-    fireEvent.click(screen.getByText("Copy Link"));
-
-    expect(writeText).toHaveBeenCalledExactlyOnceWith(`${window.location.origin}/lobby/lobby-123`);
-  });
-
   it("toggles no timer mode and updates lobby settings", () => {
     render(<Lobby />);
 
