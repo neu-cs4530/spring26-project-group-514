@@ -96,6 +96,23 @@ export async function getPublicLobbies(): Promise<LobbyInfo[]> {
 }
 
 /**
+ * Get all pending lobby invitations for a user.
+ */
+export async function getInvitedLobbies(user: UserWithId): Promise<LobbyInfo[]> {
+  const keys = await LobbyRepo.getAllKeys();
+  const all = await Promise.all(keys.map(populateLobbyInfo));
+  return all
+    .filter(
+      (lobby) =>
+        !lobby.startedGameId &&
+        lobby.players.some(
+          (player) => player.user.username === user.username && player.status === "pending",
+        ),
+    )
+    .toSorted((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+}
+
+/**
  * Invite a player to a lobby by username.
  */
 export async function invitePlayer(

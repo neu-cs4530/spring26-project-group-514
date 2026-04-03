@@ -100,6 +100,42 @@ describe("GET /api/lobby/list and GET /api/lobby/:id", () => {
   });
 });
 
+describe("POST /api/lobby/invited", () => {
+  it("returns only pending invited lobbies for the authenticated user", async () => {
+    const invitedLobby = await supertest(app)
+      .post("/api/lobby/create")
+      .send({ auth: auth1, payload: { type: "nim", isPrivate: true } });
+
+    const publicLobby = await supertest(app)
+      .post("/api/lobby/create")
+      .send({ auth: auth1, payload: { type: "guess", isPrivate: false } });
+
+    await supertest(app)
+      .post(`/api/lobby/${invitedLobby.body.lobbyId}/invite`)
+      .send({ auth: auth1, payload: { username: "user2" } });
+
+    await supertest(app)
+      .post(`/api/lobby/${publicLobby.body.lobbyId}/invite`)
+      .send({ auth: auth1, payload: { username: "user2" } });
+
+    await supertest(app)
+      .post(`/api/lobby/${publicLobby.body.lobbyId}/join`)
+      .send({ auth: auth2, payload: {} });
+
+    response = await supertest(app).post("/api/lobby/invited").send({ auth: auth2, payload: {} });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveLength(1);
+    expect(response.body[0].lobbyId).toBe(invitedLobby.body.lobbyId);
+    expect(response.body[0].players).toContainEqual(
+      expect.objectContaining({
+        user: expect.objectContaining({ username: "user2" }),
+        status: "pending",
+      }),
+    );
+  });
+});
+
 describe("Invite/join/decline flow", () => {
   it("supports invite, join, and decline lifecycle", async () => {
     const created = await supertest(app)
