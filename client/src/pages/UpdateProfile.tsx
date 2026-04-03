@@ -2,8 +2,13 @@ import { useEffect, useState } from "react";
 import useLoginContext from "../hooks/useLoginContext";
 import useTimeSince from "../hooks/useTimeSince";
 import useEditProfileForm from "../hooks/useEditProfileForm";
-import { getLeaderboardOptOut, setLeaderboardOptOut } from "../services/statsService.ts";
+import {
+  getLeaderboardOptOut,
+  getPlayerStats,
+  setLeaderboardOptOut,
+} from "../services/statsService.ts";
 import useAuth from "../hooks/useAuth.ts";
+import type { PlayerStats } from "@gamenite/shared";
 
 export default function UpdateProfile() {
   const { user } = useLoginContext();
@@ -11,6 +16,7 @@ export default function UpdateProfile() {
   const timeSince = useTimeSince();
   const [showPass, setShowPass] = useState(false);
   const [optOut, setOptOut] = useState(false);
+  const [stats, setStats] = useState<PlayerStats | null>(null);
   const { display, setDisplay, password, setPassword, confirm, setConfirm, err, handleSubmit } =
     useEditProfileForm();
 
@@ -18,6 +24,12 @@ export default function UpdateProfile() {
     getLeaderboardOptOut(user.username).then((res) => {
       if (!("error" in res)) {
         setOptOut(res.optOut);
+      }
+    });
+
+    getPlayerStats(user.username).then((res) => {
+      if (!("error" in res)) {
+        setStats(res);
       }
     });
   }, [user.username]);
@@ -40,6 +52,21 @@ export default function UpdateProfile() {
           <li>Account created {timeSince(user.createdAt)}</li>
         </ul>
       </div>
+      {stats && (
+        <div className="spacedSection">
+          <h3>Personal Stats</h3>
+          <ul>
+            <li>Total Wins: {stats.wins}</li>
+            <li>Total Losses: {stats.losses}</li>
+            <li>Games Played: {stats.gamesPlayed}</li>
+            <li>Win Rate: {(stats.winRate * 100).toFixed(1)}%</li>
+          </ul>
+          <div>
+            <strong>Badges:</strong>{" "}
+            {stats.badges.length > 0 ? stats.badges.join(", ") : "No badges yet"}
+          </div>
+        </div>
+      )}
       <hr />
       <div className="spacedSection">
         <h3>Display name</h3>
