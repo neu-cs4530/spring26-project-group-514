@@ -41,30 +41,6 @@ export const getLobbyList = async (): APIResponse<LobbyInfo[]> => {
   }
 };
 
-export const getInvitedLobbyList = async (auth: UserAuth): APIResponse<LobbyInfo[]> => {
-  try {
-    const res = await api.post<LobbyInfo[] | ErrorMsg>(`${LOBBY_API_URL}/invited`, {
-      auth,
-      payload: {},
-    });
-    return res.data;
-  } catch (error) {
-    return exceptionToErrorMsg(error);
-  }
-};
-
-export const joinLobbyById = async (auth: UserAuth, lobbyId: string): APIResponse<LobbyInfo> => {
-  try {
-    const res = await api.post<LobbyInfo | ErrorMsg>(`${LOBBY_API_URL}/${lobbyId}/join`, {
-      auth,
-      payload: {},
-    });
-    return res.data;
-  } catch (error) {
-    return exceptionToErrorMsg(error);
-  }
-};
-
 export const joinLobbyByCode = async (auth: UserAuth, code: string): APIResponse<LobbyInfo> => {
   try {
     const res = await api.post<LobbyInfo | ErrorMsg>(`${LOBBY_API_URL}/join-by-code`, {

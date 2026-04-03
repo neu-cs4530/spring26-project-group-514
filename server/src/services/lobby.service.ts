@@ -96,28 +96,6 @@ export async function getPublicLobbies(): Promise<LobbyInfo[]> {
 }
 
 /**
- * Get all pending lobby invitations for a user.
- */
-export async function getInvitedLobbies(user: UserWithId): Promise<LobbyInfo[]> {
-  const keys = await LobbyRepo.getAllKeys();
-  const invitedKeys: string[] = [];
-
-  for (const key of keys) {
-    const lobby = await LobbyRepo.get(key);
-    const isInvited = lobby.players.some(
-      (player) => player.userId === user.userId && player.status === "pending",
-    );
-
-    if (!lobby.startedGameId && isInvited) {
-      invitedKeys.push(key);
-    }
-  }
-
-  const invited = await Promise.all(invitedKeys.map(populateLobbyInfo));
-  return invited.toSorted((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-}
-
-/**
  * Invite a player to a lobby by username.
  */
 export async function invitePlayer(
@@ -271,7 +249,7 @@ export async function updateLobbySettings(
 export async function startLobby(
   lobbyId: string,
   host: UserWithId,
-): Promise<{ type: GameKey; playerIds: string[]; timerSeconds: number | null }> {
+): Promise<{ type: GameKey; playerIds: string[] }> {
   const lobby = await LobbyRepo.find(lobbyId);
   if (!lobby) throw new Error(`Lobby ${lobbyId} not found`);
   if (lobby.createdBy !== host.userId) throw new Error(`Only the host can start the game`);
@@ -283,7 +261,6 @@ export async function startLobby(
   return {
     type: lobby.type,
     playerIds: joinedPlayers.map((p) => p.userId),
-    timerSeconds: lobby.settings.timerSeconds,
   };
 }
 

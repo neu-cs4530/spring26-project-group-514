@@ -53,15 +53,6 @@ export interface GameScoresPayload {
   scores: GamePlayerScore[];
 }
 
-/**
- * Broadcast payload for match timer updates.
- */
-export interface GameTimerPayload {
-  gameId: string;
-  remainingSeconds: number;
-  isRunning: boolean;
-}
-
 /*** TYPES USED IN THE GAMES API ***/
 
 export type GameMakeMovePayload = z.infer<typeof zGameMakeMovePayload>;
