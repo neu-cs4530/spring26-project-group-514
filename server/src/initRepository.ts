@@ -30,6 +30,7 @@ async function resetStoredGames() {
       type: "nim",
       state: { remaining: 0, nextPlayer: 1 },
       done: true,
+      isPrivate: false,
       chat: (await createChat(new Date("2025-04-21"))).chatId,
       players: [user2id, user3id],
       createdAt: new Date("2025-04-21").toISOString(),
@@ -39,6 +40,7 @@ async function resetStoredGames() {
       type: "guess",
       state: { secret: 43, guesses: [null, 2, 99, null] },
       done: false,
+      isPrivate: false,
       chat: (await createChat(recently)).chatId,
       players: [user1id, user0id, user3id, user2id],
       createdAt: recently.toISOString(),
@@ -47,6 +49,7 @@ async function resetStoredGames() {
     [randomUUID().toString()]: {
       type: "nim",
       done: false,
+      isPrivate: false,
       chat: (await createChat(new Date())).chatId,
       players: [user1id],
       createdAt: new Date().toISOString(),

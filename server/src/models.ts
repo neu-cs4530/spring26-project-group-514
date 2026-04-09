@@ -66,6 +66,8 @@ export interface CommentRecord {
  * Represents a game document in the database.
  * - `type`: picks which game this is
  * - `state`: absent if the game hasn't started, or the id for the game's state
+ * - `done`: whether the game is completed
+ * - `isPrivate`: whether the lobby is hidden from public list
  * - `chat`: id for the game's chat
  * - `players`: active players for the game
  * - `createdAt`: when the game was created
@@ -75,6 +77,7 @@ export interface GameRecord {
   type: GameKey;
   state?: unknown;
   done: boolean;
+  isPrivate: boolean;
   chat: RecordId; // References Chat records
   players: RecordId[]; // References User records
   timerDurationSeconds?: number | null;
@@ -171,15 +174,6 @@ export interface DirectChatRecord {
 }
 
 /**
- * Represents a lobby document in the database.
- * - `type`: which game this lobby is for
- * - `isPrivate`: whether the lobby is hidden from public list
- * - `code`: unique join code for sharing
- * - `createdBy`: user id of the lobby host
- * - `players`: list of players and their invite statuses
- * - `createdAt`: when the lobby was created
- */
-/**
  * Represents a player's aggregated stats in the database.
  * - `userId`: the user ID
  * - `username`: the username for display
@@ -204,6 +198,15 @@ export interface PlayerStatsRecord {
   lastPlayedAt: DateISO;
 }
 
+/**
+ * Represents a lobby document in the database.
+ * - `type`: which game this lobby is for
+ * - `isPrivate`: whether the lobby is hidden from public list
+ * - `code`: unique join code for sharing
+ * - `createdBy`: user id of the lobby host
+ * - `players`: list of players and their invite statuses
+ * - `createdAt`: when the lobby was created
+ */
 export interface LobbyRecord {
   type: GameKey;
   isPrivate: boolean;

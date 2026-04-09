@@ -38,8 +38,8 @@ async function createGameFromLobby(
   lobbyId: string,
   host: { userId: string; username: string },
 ) {
-  const { type, playerIds, timerSeconds } = await startLobby(lobbyId, host);
-  const game = await createGame(host, type, new Date(), timerSeconds);
+  const { type, playerIds, timerSeconds, isPrivate } = await startLobby(lobbyId, host);
+  const game = await createGame(host, type, new Date(), timerSeconds, isPrivate);
 
   for (const playerId of playerIds) {
     if (playerId === host.userId) continue;

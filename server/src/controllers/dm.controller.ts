@@ -94,11 +94,12 @@ export const socketDmJoin: SocketAPI = (socket) => async (body) => {
 export const socketDmLeave: SocketAPI = (socket) => async (body) => {
   try {
     const { auth, payload: dmId } = withAuth(z.string()).parse(body);
-    await enforceAuth(auth);
+    const user = await enforceAuth(auth);
     if (!socket.rooms.has(dmId)) {
       throw new Error("Cannot leave a DM room you are not in");
     }
     await socket.leave(dmId);
+    await markDmAsRead(dmId, user.userId);
   } catch (err) {
     logSocketError(socket, err);
   }

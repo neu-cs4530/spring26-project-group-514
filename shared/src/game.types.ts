@@ -16,6 +16,7 @@ export interface GameInfo {
   gameId: string;
   type: GameKey;
   status: "waiting" | "active" | "done";
+  isPrivate: boolean;
   chat: string;
   players: SafeUserInfo[];
   createdAt: Date;

@@ -41,13 +41,33 @@ export const postCreate: RestAPI<GameInfo> = async (req, res) => {
 
 /**
  * Handle GET requests to `/api/game/:id`. Returns either 404 or a game info
- * object.
+ * object. Private games require authentication via x-username/x-password
+ * headers and the requester must be a participant.
  */
 export const getById: RestAPI<GameInfo, { id: string }> = async (req, res) => {
   const game = await getGameById(req.params.id);
   if (!game) {
     res.status(404).send({ error: "Game not found" });
     return;
+  }
+
+  if (game.isPrivate) {
+    const username = req.headers["x-username"];
+    const password = req.headers["x-password"];
+    if (typeof username !== "string" || typeof password !== "string") {
+      res.status(401).send({ error: "Authentication required" });
+      return;
+    }
+    const user = await checkAuth({ username, password });
+    if (!user) {
+      res.status(401).send({ error: "Invalid credentials" });
+      return;
+    }
+    const isParticipant = game.players.some((p) => p.username === user.username);
+    if (!isParticipant) {
+      res.status(403).send({ error: "Not a participant in this game" });
+      return;
+    }
   }
 
   res.send(game);
@@ -84,6 +104,11 @@ export const socketWatch: SocketAPI = (socket) => async (body) => {
   try {
     const { auth, payload: gameId } = withAuth(z.string()).parse(body);
     const user = await enforceAuth(auth);
+    const game = await getGameById(gameId);
+    if (game?.isPrivate) {
+      const isParticipant = game.players.some((p) => p.username === user.username);
+      if (!isParticipant) throw new Error("Not a participant in this private game");
+    }
     const { isPlayer, view, players } = await viewGame(gameId, user);
     const roomsToJoin = isPlayer ? [gameId, userRoom(gameId, user.userId)] : [gameId];
     await socket.join(roomsToJoin);

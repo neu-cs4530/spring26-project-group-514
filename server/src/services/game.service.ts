@@ -74,6 +74,7 @@ async function populateGameInfo(gameId: string): Promise<GameInfo> {
     createdBy: await populateSafeUserInfo(game.createdBy),
     chat: game.chat,
     createdAt: new Date(game.createdAt),
+    isPrivate: game.isPrivate,
     players: await Promise.all(game.players.map(populateSafeUserInfo)),
     type: game.type,
     status: !game.state ? "waiting" : game.done ? "done" : "active",
@@ -94,11 +95,13 @@ export async function createGame(
   type: GameKey,
   createdAt: Date,
   timerDurationSeconds: number | null = 300,
+  isPrivate: boolean = false,
 ): Promise<GameInfo> {
   const chat = await createChat(createdAt);
   const gameId = await GameRepo.add({
     type,
     done: false,
+    isPrivate,
     chat: chat.chatId,
     createdAt: createdAt.toISOString(),
     createdBy: user.userId,
@@ -193,7 +196,9 @@ export async function getGames(): Promise<GameInfo[]> {
   const keys = await GameRepo.getAllKeys();
   const unsorted = await Promise.all(keys.map(populateGameInfo));
 
-  return unsorted.toSorted((game1, game2) => game2.createdAt.getTime() - game1.createdAt.getTime());
+  return unsorted
+    .filter((game) => !game.isPrivate)
+    .toSorted((game1, game2) => game2.createdAt.getTime() - game1.createdAt.getTime());
 }
 
 /**

@@ -39,6 +39,48 @@ function usernamesFromGamePlayers(body: unknown): string[] {
     .filter((username): username is string => username !== null);
 }
 
+/**
+ * Helper: create a private lobby, invite user2, have user2 join, then start.
+ * Returns the gameId of the resulting game.
+ */
+async function createPrivateGame(): Promise<string> {
+  const created = await supertest(app)
+    .post("/api/lobby/create")
+    .send({ auth: auth1, payload: { type: "nim", isPrivate: true } });
+  const lobbyId = created.body.lobbyId as string;
+
+  await supertest(app)
+    .post(`/api/lobby/${lobbyId}/invite`)
+    .send({ auth: auth1, payload: { username: "user2" } });
+
+  await supertest(app).post(`/api/lobby/${lobbyId}/join`).send({ auth: auth2, payload: {} });
+
+  const started = await supertest(app)
+    .post(`/api/lobby/${lobbyId}/start`)
+    .send({ auth: auth1, payload: {} });
+
+  return started.body.gameId as string;
+}
+
+/**
+ * Helper: create a public lobby, have user2 join via the public lobby, then start.
+ * Returns the gameId of the resulting game.
+ */
+async function createPublicGame(): Promise<string> {
+  const created = await supertest(app)
+    .post("/api/lobby/create")
+    .send({ auth: auth1, payload: { type: "nim", isPrivate: false } });
+  const lobbyId = created.body.lobbyId as string;
+
+  await supertest(app).post(`/api/lobby/${lobbyId}/join`).send({ auth: auth2, payload: {} });
+
+  const started = await supertest(app)
+    .post(`/api/lobby/${lobbyId}/start`)
+    .send({ auth: auth1, payload: {} });
+
+  return started.body.gameId as string;
+}
+
 describe("POST /api/lobby/create", () => {
   it("returns 400 on malformed payload", async () => {
     response = await supertest(app).post("/api/lobby/create").send({ auth: auth1, payload: {} });
@@ -287,10 +329,107 @@ describe("POST /api/lobby/:id/start", () => {
     expect(lobbyAfterStart.status).toBe(200);
     expect(lobbyAfterStart.body.startedGameId).toBe(gameId);
 
-    const gameAfterStart = await supertest(app).get(`/api/game/${gameId}`);
+    const gameAfterStart = await supertest(app)
+      .get(`/api/game/${gameId}`)
+      .set("x-username", "user1")
+      .set("x-password", "pwd1111");
     expect(gameAfterStart.status).toBe(200);
     expect(gameAfterStart.body.type).toBe("nim");
     expect(gameAfterStart.body.status).toBe("active");
     expect(usernamesFromGamePlayers(gameAfterStart.body).sort()).toStrictEqual(["user1", "user2"]);
+  });
+});
+
+describe("Private game visibility (CoS 2.1, 2.2)", () => {
+  it("game created from a private lobby has isPrivate: true", async () => {
+    const gameId = await createPrivateGame();
+
+    response = await supertest(app)
+      .get(`/api/game/${gameId}`)
+      .set("x-username", "user1")
+      .set("x-password", "pwd1111");
+    expect(response.status).toBe(200);
+    expect(response.body.isPrivate).toBe(true);
+  });
+
+  it("game created from a public lobby has isPrivate: false", async () => {
+    const gameId = await createPublicGame();
+
+    response = await supertest(app).get(`/api/game/${gameId}`);
+    expect(response.status).toBe(200);
+    expect(response.body.isPrivate).toBe(false);
+  });
+
+  it("private games do not appear in GET /api/game/list", async () => {
+    const privateGameId = await createPrivateGame();
+    await createPublicGame();
+
+    response = await supertest(app).get("/api/game/list");
+    expect(response.status).toBe(200);
+
+    const gameIds = (response.body as { gameId: string }[]).map((g) => g.gameId);
+    expect(gameIds).not.toContain(privateGameId);
+  });
+
+  it("public games still appear in GET /api/game/list", async () => {
+    await createPrivateGame();
+    const publicGameId = await createPublicGame();
+
+    response = await supertest(app).get("/api/game/list");
+    expect(response.status).toBe(200);
+
+    const gameIds = (response.body as { gameId: string }[]).map((g) => g.gameId);
+    expect(gameIds).toContain(publicGameId);
+  });
+});
+
+describe("Private game access control", () => {
+  it("a participant can GET a private game by id", async () => {
+    const gameId = await createPrivateGame();
+
+    response = await supertest(app)
+      .get(`/api/game/${gameId}`)
+      .set("x-username", "user1")
+      .set("x-password", "pwd1111");
+    expect(response.status).toBe(200);
+    expect(response.body.gameId).toBe(gameId);
+  });
+
+  it("a non-participant gets 403 on a private game", async () => {
+    const gameId = await createPrivateGame();
+
+    response = await supertest(app)
+      .get(`/api/game/${gameId}`)
+      .set("x-username", "user3")
+      .set("x-password", "pwd3333");
+    expect(response.status).toBe(403);
+    expect(response.body).toStrictEqual({ error: "Not a participant in this game" });
+  });
+
+  it("no auth headers on a private game returns 401", async () => {
+    const gameId = await createPrivateGame();
+
+    response = await supertest(app).get(`/api/game/${gameId}`);
+    expect(response.status).toBe(401);
+    expect(response.body).toStrictEqual({ error: "Authentication required" });
+  });
+
+  it("bad credentials on a private game returns 401", async () => {
+    const gameId = await createPrivateGame();
+
+    response = await supertest(app)
+      .get(`/api/game/${gameId}`)
+      .set("x-username", "user1")
+      .set("x-password", "wrong");
+    expect(response.status).toBe(401);
+    expect(response.body).toStrictEqual({ error: "Invalid credentials" });
+  });
+
+  it("public games remain accessible without auth", async () => {
+    const gameId = await createPublicGame();
+
+    response = await supertest(app).get(`/api/game/${gameId}`);
+    expect(response.status).toBe(200);
+    expect(response.body.gameId).toBe(gameId);
   });
 });

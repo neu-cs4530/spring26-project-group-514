@@ -100,6 +100,46 @@ endpoints in `server/src/app.ts`.
 | `/:username` | POST   | Update user's displayname or password |
 | `/:username` | GET    | Get information about a user          |
 
+### `/api/friend`
+
+| Method | Route                 | Purpose                                                            |
+| ------ | --------------------- | ------------------------------------------------------------------ |
+| POST   | `/request`            | Send a friend request (`{ auth, payload: {toUsername} }`)          |
+| POST   | `/respond`            | Accept/reject a request (`{ auth, payload: {requestId, action} }`) |
+| POST   | `/remove`             | Remove a friend (`{ auth, payload: {friendUsername} }`)            |
+| GET    | `/list/:username`     | Get user's accepted friends list                                   |
+| GET    | `/requests/:username` | Get pending incoming/outgoing requests                             |
+
+### `/api/dm`
+
+| Method | Route             | Purpose                                        |
+| ------ | ----------------- | ---------------------------------------------- |
+| GET    | `/list/:username` | Get all DM conversations for a user            |
+| GET    | `/:id`            | Get a specific DM conversation (with messages) |
+
+`/list/:username` needs "x-password: [insert user password]" as a header in
+the request to authenticate themselves `/:id` needs both "x-username" and
+"x-password"
+
+### `/api/block`
+
+| Method | Route             | Purpose                                                |
+| ------ | ----------------- | ------------------------------------------------------ |
+| POST   | `/block`          | Block a user (`{ auth, payload: {targetUsername} }`)   |
+| POST   | `/unblock`        | Unblock a user (`{ auth, payload: {targetUsername} }`) |
+| GET    | `/list/:username` | Get user's blocked list                                |
+
+`/list/:username` needs "x-password: [insert user password]" as a header in
+the request to authenticate themselves
+
+#### Side-effects of blocking
+
+- Blocking a user should cascade: remove existing friendship, cancel pending
+  friend requests, and remove DMs between both users.
+- Blocking is one-directional (A blocks B does not mean B blocks A).
+- `sendFriendRequest` and DM messaging should check the block list and reject
+  if either user has blocked the other.
+
 ### Websockets
 
 The Socket.io API for event-driven communication between clients and the
