@@ -42,6 +42,7 @@ afterEach(() => {
 
 /** Helper: seed a DM between user0 and user1, return the chatId */
 async function seedDm(): Promise<string> {
+  // TODO: Change this to prevent null via expect(user0).toBeTruthy() in case seed data changes
   const user0 = (await getUserByUsername("user0"))!;
   const user1 = (await getUserByUsername("user1"))!;
   const now = new Date().toISOString();

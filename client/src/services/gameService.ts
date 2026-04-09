@@ -22,9 +22,11 @@ export const createGame = async (auth: UserAuth, gameKey: GameKey): APIResponse<
 /**
  * Sends a GET request to get a game
  */
-export const getGameById = async (gameId: string): APIResponse<GameInfo> => {
+export const getGameById = async (gameId: string, auth: UserAuth): APIResponse<GameInfo> => {
   try {
-    const res = await api.get<GameInfo | ErrorMsg>(`${GAME_API_URL}/${gameId}`);
+    const res = await api.get<GameInfo | ErrorMsg>(`${GAME_API_URL}/${gameId}`, {
+      headers: { "x-username": auth.username, "x-password": auth.password },
+    });
     return res.data;
   } catch (error) {
     return exceptionToErrorMsg(error);

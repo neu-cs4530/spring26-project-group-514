@@ -37,6 +37,7 @@ describe("POST /api/game/create", () => {
     expect(response.status).toBe(200);
     expect(response.body).toStrictEqual({
       gameId: expect.anything(),
+      isPrivate: false,
       chat: expect.anything(),
       type: "nim",
       status: "waiting",
