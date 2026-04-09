@@ -66,6 +66,7 @@ export interface ServerToClientEvents {
   gameWatched: (payload: GamePlayInfo) => void;
   dmJoined: (payload: DirectChatInfo) => void;
   dmNewMessage: (payload: DmNewMessagePayload) => void;
+  lobbyInviteReceived: (payload: LobbyInfo) => void;
   lobbyUpdated: (payload: LobbyInfo) => void;
   lobbyStarted: (payload: { lobbyId: string; gameId: string }) => void;
   lobbyError: (payload: { lobbyId: string; error: string }) => void;
