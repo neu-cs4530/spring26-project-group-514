@@ -11,6 +11,7 @@ export default function useSocketsForLobby(lobbyId: string) {
   const { user, socket } = useLoginContext();
   const [lobby, setLobby] = useState<LobbyInfo | null>(null);
   const [startedGameId, setStartedGameId] = useState<string | null>(null);
+  const [lobbyError, setLobbyError] = useState<string | null>(null);
 
   useEffect(() => {
     const onLobbyUpdated = (payload: LobbyInfo) => {
@@ -26,13 +27,20 @@ export default function useSocketsForLobby(lobbyId: string) {
       setStartedGameId(payload.gameId);
     };
 
+    const onLobbyError = (payload: { lobbyId: string; error: string }) => {
+      if (payload.lobbyId !== lobbyId) return;
+      setLobbyError(payload.error);
+    };
+
     socket.on("lobbyUpdated", onLobbyUpdated);
     socket.on("lobbyStarted", onLobbyStarted);
+    socket.on("lobbyError", onLobbyError);
     socket.emit("lobbyWatch", { auth, payload: lobbyId });
 
     return () => {
       socket.off("lobbyUpdated", onLobbyUpdated);
       socket.off("lobbyStarted", onLobbyStarted);
+      socket.off("lobbyError", onLobbyError);
       socket.emit("lobbyUnwatch", { auth, payload: lobbyId });
     };
   }, [socket, auth, lobbyId]);
@@ -65,6 +73,7 @@ export default function useSocketsForLobby(lobbyId: string) {
   }
 
   function startLobby() {
+    setLobbyError(null);
     socket.emit("lobbyStart", { auth, payload: lobbyId });
   }
 
@@ -73,6 +82,7 @@ export default function useSocketsForLobby(lobbyId: string) {
     me,
     isHost,
     startedGameId,
+    lobbyError,
     joinLobby,
     leaveLobby,
     declineInvite,

@@ -382,11 +382,16 @@ export const socketUpdateSettings: SocketAPI = (socket, io) => async (body) => {
 
 /** Handle lobby start via socket, creating and starting the linked game. */
 export const socketStart: SocketAPI = (socket, io) => async (body) => {
+  let lobbyId: string | undefined;
   try {
-    const { auth, payload: lobbyId } = withAuth(z.string()).parse(body);
-    const user = await enforceAuth(auth);
+    const parsed = withAuth(z.string()).parse(body);
+    lobbyId = parsed.payload;
+    const user = await enforceAuth(parsed.auth);
     await createGameFromLobby(io, lobbyId, user);
   } catch (err) {
     logSocketError(socket, err);
+    if (lobbyId && err instanceof Error) {
+      socket.emit("lobbyError", { lobbyId, error: err.message });
+    }
   }
 };

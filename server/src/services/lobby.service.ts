@@ -4,6 +4,7 @@ import { LobbyRepo } from "../repository.ts";
 import { populateSafeUserInfo } from "./user.service.ts";
 import { randomUUID } from "node:crypto";
 import { createChat } from "./chat.service.ts";
+import { gameServices } from "./game.service.ts";
 
 const defaultLobbySettings: LobbySettingsPayload = {
   mode: "standard",
@@ -283,7 +284,14 @@ export async function startLobby(
   ensureLobbyNotStarted(lobby.startedGameId);
 
   const joinedPlayers = lobby.players.filter((p) => p.status === "joined");
-  if (joinedPlayers.length < 2) throw new Error(`Not enough players to start`);
+  const { minPlayers, maxPlayers } = gameServices[lobby.type];
+  if (joinedPlayers.length < minPlayers) throw new Error("Min player count not met");
+  if (maxPlayers !== null && joinedPlayers.length > maxPlayers)
+    throw new Error(`Max player count exceeded. Max players: ${maxPlayers}`);
+
+  // Mark as starting immediately to prevent concurrent start requests
+  lobby.startedGameId = "starting";
+  await LobbyRepo.set(lobbyId, lobby);
 
   return {
     type: lobby.type,
