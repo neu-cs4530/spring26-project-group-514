@@ -25,6 +25,7 @@ import {
   updateLobbySettings,
 } from "../services/lobby.service.ts";
 import { createGame, joinGame, startGame } from "../services/game.service.ts";
+import { maybeStartGameTimer } from "./gameTimer.ts";
 import { populateSafeUserInfo } from "../services/user.service.ts";
 import { z } from "zod";
 import { logSocketError } from "./socket.controller.ts";
@@ -52,6 +53,7 @@ async function createGameFromLobby(
 
   if (io) {
     io.to(lobbyId).emit("lobbyStarted", { lobbyId, gameId: game.gameId });
+    await maybeStartGameTimer(io, game.gameId);
   }
   return game.gameId;
 }
@@ -133,44 +135,50 @@ export const postInvite: RestAPI<LobbyInfo, { id: string }> = async (req, res) =
 };
 
 /** POST /api/lobby/:id/join */
-export const postJoin: RestAPI<LobbyInfo, { id: string }> = async (req, res) => {
-  const body = parseEmptyPayload(req.body);
-  if (body.error) {
-    res.status(400).send({ error: "Poorly-formed request" });
-    return;
-  }
-  const user = await checkAuth(body.data.auth);
-  if (!user) {
-    res.status(403).send({ error: "Invalid credentials" });
-    return;
-  }
-  try {
-    const lobby = await joinLobby(req.params.id, user);
-    res.send(lobby);
-  } catch (err) {
-    res.status(400).send({ error: (err as Error).message });
-  }
-};
+export const postJoin =
+  (io: GameServer): RestAPI<LobbyInfo, { id: string }> =>
+  async (req, res) => {
+    const body = parseEmptyPayload(req.body);
+    if (body.error) {
+      res.status(400).send({ error: "Poorly-formed request" });
+      return;
+    }
+    const user = await checkAuth(body.data.auth);
+    if (!user) {
+      res.status(403).send({ error: "Invalid credentials" });
+      return;
+    }
+    try {
+      const lobby = await joinLobby(req.params.id, user);
+      sendLobbyUpdate(io, req.params.id, lobby);
+      res.send(lobby);
+    } catch (err) {
+      res.status(400).send({ error: (err as Error).message });
+    }
+  };
 
 /** POST /api/lobby/join-by-code */
-export const postJoinByCode: RestAPI<LobbyInfo> = async (req, res) => {
-  const body = withAuth(zJoinLobbyByCodePayload).safeParse(req.body);
-  if (body.error) {
-    res.status(400).send({ error: "Poorly-formed request" });
-    return;
-  }
-  const user = await checkAuth(body.data.auth);
-  if (!user) {
-    res.status(403).send({ error: "Invalid credentials" });
-    return;
-  }
-  try {
-    const lobby = await joinLobbyByCode(body.data.payload.code, user);
-    res.send(lobby);
-  } catch (err) {
-    res.status(400).send({ error: (err as Error).message });
-  }
-};
+export const postJoinByCode =
+  (io: GameServer): RestAPI<LobbyInfo> =>
+  async (req, res) => {
+    const body = withAuth(zJoinLobbyByCodePayload).safeParse(req.body);
+    if (body.error) {
+      res.status(400).send({ error: "Poorly-formed request" });
+      return;
+    }
+    const user = await checkAuth(body.data.auth);
+    if (!user) {
+      res.status(403).send({ error: "Invalid credentials" });
+      return;
+    }
+    try {
+      const lobby = await joinLobbyByCode(body.data.payload.code, user);
+      sendLobbyUpdate(io, lobby.lobbyId, lobby);
+      res.send(lobby);
+    } catch (err) {
+      res.status(400).send({ error: (err as Error).message });
+    }
+  };
 
 /** POST /api/lobby/:id/leave */
 export const postLeave: RestAPI<LobbyInfo, { id: string }> = async (req, res) => {
@@ -335,6 +343,7 @@ export const socketInvitePlayer: SocketAPI = (socket, io) => async (body) => {
     const user = await enforceAuth(auth);
     const lobby = await invitePlayer(payload.lobbyId, user, payload.username);
     sendLobbyUpdate(io, payload.lobbyId, lobby);
+    io.to(`user:${payload.username}`).emit("lobbyInviteReceived", lobby);
   } catch (err) {
     logSocketError(socket, err);
   }
