@@ -117,8 +117,9 @@ endpoints in `server/src/app.ts`.
 | GET    | `/list/:username` | Get all DM conversations for a user            |
 | GET    | `/:id`            | Get a specific DM conversation (with messages) |
 
-`/list/:username` needs "x-password: [insert user password]" as a header in the request to authenticate themselves
-`/:id` needs both "x-username" and "x-password"
+`/list/:username` needs "x-password: [insert user password]" as a header in
+the request to authenticate themselves `/:id` needs both "x-username" and
+"x-password"
 
 ### `/api/block`
 
@@ -136,8 +137,8 @@ the request to authenticate themselves
 - Blocking a user should cascade: remove existing friendship, cancel pending
   friend requests, and remove DMs between both users.
 - Blocking is one-directional (A blocks B does not mean B blocks A).
-- `sendFriendRequest` and DM messaging should check the block list and reject if
-  either user has blocked the other.
+- `sendFriendRequest` and DM messaging should check the block list and reject
+  if either user has blocked the other.
 
 ### Websockets
 
