@@ -2,8 +2,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { GameServer, GameServerSocket } from "../src/types.ts";
 import { logSocketError } from "../src/controllers/socket.controller.ts";
 import { socketWatch } from "../src/controllers/game.controller.ts";
+import { socketStart } from "../src/controllers/lobby.controller.ts";
 import { getUserByUsername } from "../src/services/auth.service.ts";
 import { createGame, joinGame, startGame } from "../src/services/game.service.ts";
+import { createLobby, joinLobby } from "../src/services/lobby.service.ts";
 
 vi.mock(import("../src/controllers/socket.controller.ts"), () => {
   return { logSocketError: vi.fn() };
@@ -54,6 +56,68 @@ async function seedPublicGame(): Promise<string> {
   await startGame(game.gameId, user1);
   return game.gameId;
 }
+
+describe("socketStart error surfacing", () => {
+  it("emits lobbyError when lobby exceeds max player count", async () => {
+    const host = (await getUserByUsername("user1"))!;
+    const user2 = (await getUserByUsername("user2"))!;
+    const user3 = (await getUserByUsername("user3"))!;
+
+    const lobby = await createLobby(host, "nim", false, new Date());
+    await joinLobby(lobby.lobbyId, user2);
+    await joinLobby(lobby.lobbyId, user3);
+
+    await socketStart(
+      mockSocket,
+      mockServer,
+    )({
+      auth: auth1,
+      payload: lobby.lobbyId,
+    });
+
+    expect(mockSocket.emit).toHaveBeenCalledWith("lobbyError", {
+      lobbyId: lobby.lobbyId,
+      error: "Max player count exceeded. Max players: 2",
+    });
+  });
+
+  it("emits lobbyError when lobby has fewer than min players", async () => {
+    const host = (await getUserByUsername("user1"))!;
+
+    const lobby = await createLobby(host, "nim", false, new Date());
+
+    await socketStart(
+      mockSocket,
+      mockServer,
+    )({
+      auth: auth1,
+      payload: lobby.lobbyId,
+    });
+
+    expect(mockSocket.emit).toHaveBeenCalledWith("lobbyError", {
+      lobbyId: lobby.lobbyId,
+      error: "Min player count not met",
+    });
+  });
+
+  it("does not emit lobbyError on successful start", async () => {
+    const host = (await getUserByUsername("user1"))!;
+    const user2 = (await getUserByUsername("user2"))!;
+
+    const lobby = await createLobby(host, "nim", false, new Date());
+    await joinLobby(lobby.lobbyId, user2);
+
+    await socketStart(
+      mockSocket,
+      mockServer,
+    )({
+      auth: auth1,
+      payload: lobby.lobbyId,
+    });
+
+    expect(mockSocket.emit).not.toHaveBeenCalledWith("lobbyError", expect.anything());
+  });
+});
 
 describe("socketWatch private game access control", () => {
   it("allows a participant to watch a private game", async () => {

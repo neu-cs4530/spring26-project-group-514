@@ -5,8 +5,10 @@ import { app } from "../src/app.ts";
 
 let response: Response;
 
+const auth0 = { username: "user0", password: "pwd0000" };
 const auth1 = { username: "user1", password: "pwd1111" };
 const auth2 = { username: "user2", password: "pwd2222" };
+const auth3 = { username: "user3", password: "pwd3333" };
 const authBad = { username: "user1", password: "wrong" };
 
 function usernamesFromLobbyPlayers(body: unknown): string[] {
@@ -337,6 +339,142 @@ describe("POST /api/lobby/:id/start", () => {
     expect(gameAfterStart.body.type).toBe("nim");
     expect(gameAfterStart.body.status).toBe("active");
     expect(usernamesFromGamePlayers(gameAfterStart.body).sort()).toStrictEqual(["user1", "user2"]);
+  });
+});
+
+describe("POST /api/lobby/:id/start — player count validation", () => {
+  it("returns 400 when lobby exceeds max player count (nim: max 2)", async () => {
+    // Create a nim lobby (maxPlayers: 2) and add 3 joined players
+    const created = await supertest(app)
+      .post("/api/lobby/create")
+      .send({ auth: auth1, payload: { type: "nim", isPrivate: false } });
+    const lobbyId = created.body.lobbyId as string;
+
+    await supertest(app).post(`/api/lobby/${lobbyId}/join`).send({ auth: auth2, payload: {} });
+    await supertest(app).post(`/api/lobby/${lobbyId}/join`).send({ auth: auth3, payload: {} });
+
+    response = await supertest(app)
+      .post(`/api/lobby/${lobbyId}/start`)
+      .send({ auth: auth1, payload: {} });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toStrictEqual({ error: "Max player count exceeded. Max players: 2" });
+  });
+
+  it("returns 400 when lobby has fewer players than min player count", async () => {
+    // Create a nim lobby (minPlayers: 2) with only the host
+    const created = await supertest(app)
+      .post("/api/lobby/create")
+      .send({ auth: auth1, payload: { type: "nim", isPrivate: false } });
+    const lobbyId = created.body.lobbyId as string;
+
+    response = await supertest(app)
+      .post(`/api/lobby/${lobbyId}/start`)
+      .send({ auth: auth1, payload: {} });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toStrictEqual({ error: "Min player count not met" });
+  });
+
+  it("succeeds when player count is exactly at max (nim: 2)", async () => {
+    const created = await supertest(app)
+      .post("/api/lobby/create")
+      .send({ auth: auth1, payload: { type: "nim", isPrivate: false } });
+    const lobbyId = created.body.lobbyId as string;
+
+    await supertest(app).post(`/api/lobby/${lobbyId}/join`).send({ auth: auth2, payload: {} });
+
+    response = await supertest(app)
+      .post(`/api/lobby/${lobbyId}/start`)
+      .send({ auth: auth1, payload: {} });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toStrictEqual({ gameId: expect.anything() });
+  });
+
+  it("succeeds with many players when maxPlayers is null (guess: unlimited)", async () => {
+    const created = await supertest(app)
+      .post("/api/lobby/create")
+      .send({ auth: auth1, payload: { type: "guess", isPrivate: false } });
+    const lobbyId = created.body.lobbyId as string;
+
+    await supertest(app).post(`/api/lobby/${lobbyId}/join`).send({ auth: auth0, payload: {} });
+    await supertest(app).post(`/api/lobby/${lobbyId}/join`).send({ auth: auth2, payload: {} });
+    await supertest(app).post(`/api/lobby/${lobbyId}/join`).send({ auth: auth3, payload: {} });
+
+    response = await supertest(app)
+      .post(`/api/lobby/${lobbyId}/start`)
+      .send({ auth: auth1, payload: {} });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toStrictEqual({ gameId: expect.anything() });
+  });
+
+  it("does not create a game when max player count is exceeded", async () => {
+    const gamesBefore = await supertest(app).get("/api/game/list");
+
+    const created = await supertest(app)
+      .post("/api/lobby/create")
+      .send({ auth: auth1, payload: { type: "nim", isPrivate: false } });
+    const lobbyId = created.body.lobbyId as string;
+
+    await supertest(app).post(`/api/lobby/${lobbyId}/join`).send({ auth: auth2, payload: {} });
+    await supertest(app).post(`/api/lobby/${lobbyId}/join`).send({ auth: auth3, payload: {} });
+
+    await supertest(app).post(`/api/lobby/${lobbyId}/start`).send({ auth: auth1, payload: {} });
+
+    const gamesAfter = await supertest(app).get("/api/game/list");
+    expect(gamesAfter.body.length).toBe(gamesBefore.body.length);
+  });
+});
+
+describe("POST /api/lobby/:id/start — race condition prevention", () => {
+  it("concurrent start requests create only one game", async () => {
+    const created = await supertest(app)
+      .post("/api/lobby/create")
+      .send({ auth: auth1, payload: { type: "nim", isPrivate: false } });
+    const lobbyId = created.body.lobbyId as string;
+
+    await supertest(app).post(`/api/lobby/${lobbyId}/join`).send({ auth: auth2, payload: {} });
+
+    const gamesBefore = await supertest(app).get("/api/game/list");
+
+    // Fire two start requests concurrently
+    const [res1, res2] = await Promise.all([
+      supertest(app).post(`/api/lobby/${lobbyId}/start`).send({ auth: auth1, payload: {} }),
+      supertest(app).post(`/api/lobby/${lobbyId}/start`).send({ auth: auth1, payload: {} }),
+    ]);
+
+    const successes = [res1, res2].filter((r) => r.status === 200);
+    const failures = [res1, res2].filter((r) => r.status === 400);
+
+    expect(successes).toHaveLength(1);
+    expect(failures).toHaveLength(1);
+    expect(failures[0].body).toStrictEqual({ error: "Lobby already started" });
+
+    // Only one new game should exist
+    const gamesAfter = await supertest(app).get("/api/game/list");
+    expect(gamesAfter.body.length).toBe(gamesBefore.body.length + 1);
+  });
+
+  it("second start request after first completes is rejected", async () => {
+    const created = await supertest(app)
+      .post("/api/lobby/create")
+      .send({ auth: auth1, payload: { type: "nim", isPrivate: false } });
+    const lobbyId = created.body.lobbyId as string;
+
+    await supertest(app).post(`/api/lobby/${lobbyId}/join`).send({ auth: auth2, payload: {} });
+
+    const first = await supertest(app)
+      .post(`/api/lobby/${lobbyId}/start`)
+      .send({ auth: auth1, payload: {} });
+    expect(first.status).toBe(200);
+
+    const second = await supertest(app)
+      .post(`/api/lobby/${lobbyId}/start`)
+      .send({ auth: auth1, payload: {} });
+    expect(second.status).toBe(400);
+    expect(second.body).toStrictEqual({ error: "Lobby already started" });
   });
 });
 

@@ -4,6 +4,7 @@ import useSocketsForLobby from "../hooks/useSocketsForLobby.ts";
 import useFriendList from "../hooks/useFriendList.ts";
 import UserLink from "../components/UserLink.tsx";
 import ChatPanel from "../components/ChatPanel.tsx";
+import ActionErrorBanner from "../components/ActionErrorBanner.tsx";
 
 const TIMER_PRESETS_KEY = "gamenite:lobbyTimerPresets";
 
@@ -53,6 +54,7 @@ export default function Lobby() {
     isHost,
     me,
     startedGameId,
+    lobbyError,
     joinLobby,
     leaveLobby,
     declineInvite,
@@ -288,9 +290,12 @@ export default function Lobby() {
           </button>
         )}
         {isHost && (
-          <button className="primary narrow" onClick={startLobby}>
-            Start Game
-          </button>
+          <>
+            <ActionErrorBanner error={lobbyError} />
+            <button className="primary narrow" onClick={startLobby}>
+              Start Game
+            </button>
+          </>
         )}
       </div>
 
