@@ -307,6 +307,17 @@ describe("Lobby controls and settings", () => {
 });
 
 describe("POST /api/lobby/:id/start", () => {
+  it("returns 403 with invalid auth", async () => {
+    const created = await supertest(app)
+      .post("/api/lobby/create")
+      .send({ auth: auth1, payload: { type: "nim", isPrivate: false } });
+
+    response = await supertest(app)
+      .post(`/api/lobby/${created.body.lobbyId}/start`)
+      .send({ auth: authBad, payload: {} });
+    expect(response.status).toBe(403);
+  });
+
   it("starts lobby game, marks lobby started, and creates active game with joined players", async () => {
     const created = await supertest(app)
       .post("/api/lobby/create")

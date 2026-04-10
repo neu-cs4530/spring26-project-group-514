@@ -172,7 +172,10 @@ describe("lobbySocketWatch", () => {
     const host = (await getUserByUsername("user1"))!;
     const lobby = await createLobby(host, "nim", false, new Date());
 
-    await lobbySocketWatch(mockSocket, mockServer)({
+    await lobbySocketWatch(
+      mockSocket,
+      mockServer,
+    )({
       auth: auth1,
       payload: lobby.lobbyId,
     });
@@ -195,7 +198,10 @@ describe("lobbySocketWatch", () => {
     const game = await createGame(host, "nim", new Date(), null, false);
     await markLobbyStarted(lobby.lobbyId, game.gameId);
 
-    await lobbySocketWatch(mockSocket, mockServer)({
+    await lobbySocketWatch(
+      mockSocket,
+      mockServer,
+    )({
       auth: auth1,
       payload: lobby.lobbyId,
     });
@@ -208,7 +214,10 @@ describe("lobbySocketWatch", () => {
   });
 
   it("logs error when lobby is not found", async () => {
-    await lobbySocketWatch(mockSocket, mockServer)({
+    await lobbySocketWatch(
+      mockSocket,
+      mockServer,
+    )({
       auth: auth1,
       payload: "nonexistent-lobby-id",
     });
@@ -218,7 +227,10 @@ describe("lobbySocketWatch", () => {
   });
 
   it("logs error when auth is invalid", async () => {
-    await lobbySocketWatch(mockSocket, mockServer)({
+    await lobbySocketWatch(
+      mockSocket,
+      mockServer,
+    )({
       auth: authBad,
       payload: "some-lobby",
     });
@@ -232,7 +244,10 @@ describe("socketUnwatch", () => {
     const host = (await getUserByUsername("user1"))!;
     const lobby = await createLobby(host, "nim", false, new Date());
 
-    await socketUnwatch(mockSocket, mockServer)({
+    await socketUnwatch(
+      mockSocket,
+      mockServer,
+    )({
       auth: auth1,
       payload: lobby.lobbyId,
     });
@@ -242,7 +257,10 @@ describe("socketUnwatch", () => {
   });
 
   it("logs error when auth is invalid", async () => {
-    await socketUnwatch(mockSocket, mockServer)({
+    await socketUnwatch(
+      mockSocket,
+      mockServer,
+    )({
       auth: authBad,
       payload: "some-lobby",
     });
@@ -256,7 +274,10 @@ describe("lobbySocketJoin", () => {
     const host = (await getUserByUsername("user1"))!;
     const lobby = await createLobby(host, "nim", false, new Date());
 
-    await lobbySocketJoin(mockSocket, mockServer)({
+    await lobbySocketJoin(
+      mockSocket,
+      mockServer,
+    )({
       auth: auth2,
       payload: lobby.lobbyId,
     });
@@ -274,7 +295,10 @@ describe("lobbySocketJoin", () => {
     const host = (await getUserByUsername("user1"))!;
     const lobby = await createLobby(host, "nim", true, new Date());
 
-    await lobbySocketJoin(mockSocket, mockServer)({
+    await lobbySocketJoin(
+      mockSocket,
+      mockServer,
+    )({
       auth: auth2,
       payload: lobby.lobbyId,
     });
@@ -290,7 +314,10 @@ describe("lobbySocketLeave", () => {
     const lobby = await createLobby(host, "nim", false, new Date());
     await joinLobby(lobby.lobbyId, user2);
 
-    await lobbySocketLeave(mockSocket, mockServer)({
+    await lobbySocketLeave(
+      mockSocket,
+      mockServer,
+    )({
       auth: auth2,
       payload: lobby.lobbyId,
     });
@@ -307,7 +334,10 @@ describe("lobbySocketLeave", () => {
     const host = (await getUserByUsername("user1"))!;
     const lobby = await createLobby(host, "nim", false, new Date());
 
-    await lobbySocketLeave(mockSocket, mockServer)({
+    await lobbySocketLeave(
+      mockSocket,
+      mockServer,
+    )({
       auth: auth1,
       payload: lobby.lobbyId,
     });
@@ -321,7 +351,10 @@ describe("socketInvitePlayer", () => {
     const host = (await getUserByUsername("user1"))!;
     const lobby = await createLobby(host, "nim", true, new Date());
 
-    await socketInvitePlayer(mockSocket, mockServer)({
+    await socketInvitePlayer(
+      mockSocket,
+      mockServer,
+    )({
       auth: auth1,
       payload: { lobbyId: lobby.lobbyId, username: "user2" },
     });
@@ -340,7 +373,10 @@ describe("socketInvitePlayer", () => {
     const lobby = await createLobby(host, "nim", false, new Date());
     await joinLobby(lobby.lobbyId, user2);
 
-    await socketInvitePlayer(mockSocket, mockServer)({
+    await socketInvitePlayer(
+      mockSocket,
+      mockServer,
+    )({
       auth: auth2,
       payload: { lobbyId: lobby.lobbyId, username: "user3" },
     });
@@ -355,7 +391,10 @@ describe("socketDeclineInvite", () => {
     const lobby = await createLobby(host, "nim", true, new Date());
     await invitePlayer(lobby.lobbyId, host, "user2");
 
-    await socketDeclineInvite(mockSocket, mockServer)({
+    await socketDeclineInvite(
+      mockSocket,
+      mockServer,
+    )({
       auth: auth2,
       payload: lobby.lobbyId,
     });
@@ -372,7 +411,10 @@ describe("socketDeclineInvite", () => {
     const host = (await getUserByUsername("user1"))!;
     const lobby = await createLobby(host, "nim", true, new Date());
 
-    await socketDeclineInvite(mockSocket, mockServer)({
+    await socketDeclineInvite(
+      mockSocket,
+      mockServer,
+    )({
       auth: auth2,
       payload: lobby.lobbyId,
     });
@@ -387,7 +429,10 @@ describe("socketRemovePlayer", () => {
     const lobby = await createLobby(host, "nim", true, new Date());
     await invitePlayer(lobby.lobbyId, host, "user2");
 
-    await socketRemovePlayer(mockSocket, mockServer)({
+    await socketRemovePlayer(
+      mockSocket,
+      mockServer,
+    )({
       auth: auth1,
       payload: { lobbyId: lobby.lobbyId, username: "user2" },
     });
@@ -406,7 +451,10 @@ describe("socketRemovePlayer", () => {
     const lobby = await createLobby(host, "nim", false, new Date());
     await joinLobby(lobby.lobbyId, user2);
 
-    await socketRemovePlayer(mockSocket, mockServer)({
+    await socketRemovePlayer(
+      mockSocket,
+      mockServer,
+    )({
       auth: auth2,
       payload: { lobbyId: lobby.lobbyId, username: "user1" },
     });
@@ -420,7 +468,10 @@ describe("socketUpdateSettings", () => {
     const host = (await getUserByUsername("user1"))!;
     const lobby = await createLobby(host, "nim", false, new Date());
 
-    await socketUpdateSettings(mockSocket, mockServer)({
+    await socketUpdateSettings(
+      mockSocket,
+      mockServer,
+    )({
       auth: auth1,
       payload: {
         lobbyId: lobby.lobbyId,
@@ -445,7 +496,10 @@ describe("socketUpdateSettings", () => {
     const lobby = await createLobby(host, "nim", false, new Date());
     await joinLobby(lobby.lobbyId, user2);
 
-    await socketUpdateSettings(mockSocket, mockServer)({
+    await socketUpdateSettings(
+      mockSocket,
+      mockServer,
+    )({
       auth: auth2,
       payload: {
         lobbyId: lobby.lobbyId,
