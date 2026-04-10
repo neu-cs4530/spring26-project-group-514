@@ -570,9 +570,7 @@ describe("POST /api/lobby/join-by-code", () => {
 
 describe("POST /api/lobby/:id/invite — error paths", () => {
   it("returns 400 on malformed payload", async () => {
-    response = await supertest(app)
-      .post(`/api/lobby/${randomUUID()}/invite`)
-      .send({ auth: auth1 });
+    response = await supertest(app).post(`/api/lobby/${randomUUID()}/invite`).send({ auth: auth1 });
     expect(response.status).toBe(400);
   });
 
@@ -710,9 +708,7 @@ describe("POST /api/lobby/:id/decline — error paths", () => {
 
 describe("POST /api/lobby/:id/remove — error paths", () => {
   it("returns 400 on malformed payload", async () => {
-    response = await supertest(app)
-      .post(`/api/lobby/${randomUUID()}/remove`)
-      .send({ auth: auth1 });
+    response = await supertest(app).post(`/api/lobby/${randomUUID()}/remove`).send({ auth: auth1 });
     expect(response.status).toBe(400);
   });
 
