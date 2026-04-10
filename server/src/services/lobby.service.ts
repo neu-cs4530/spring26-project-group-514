@@ -170,7 +170,8 @@ export async function joinLobby(
     playerEntry.status = "joined";
   } else {
     // Joining a public lobby directly, or a private lobby via code
-    if (lobby.isPrivate && !byCode) throw new Error(`Cannot join a private lobby without an invite`);
+    if (lobby.isPrivate && !byCode)
+      throw new Error(`Cannot join a private lobby without an invite`);
     lobby.players = [...lobby.players, { userId: user.userId, status: "joined" }];
   }
 
