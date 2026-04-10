@@ -152,10 +152,10 @@ the request to authenticate themselves
 ### `/api/stats`
 
 | Method | Route                            | Purpose                                                                        |
-| ------ | -------------------------------- | ------------------------------------------------------------------------------ | ----- | ------------------------ |
+| ------ | -------------------------------- | ------------------------------------------------------------------------------ |
 | GET    | `/player/:username`              | Get aggregate player stats                                                     |
 | GET    | `/history/:username`             | Get paginated match history (supports `page`, `limit`, and filters)            |
-| GET    | `/leaderboard`                   | Get paginated leaderboard (`period=week                                        | month | all`, plus `page/limit`) |
+| GET    | `/leaderboard`                   | Get paginated leaderboard (`period=week/month/all`, plus `page/limit`)         |
 | POST   | `/leaderboard-opt-out`           | Set leaderboard opt-out for authenticated user (`{ auth, payload: {optOut} }`) |
 | GET    | `/leaderboard-opt-out/:username` | Get a user's leaderboard opt-out status                                        |
 
