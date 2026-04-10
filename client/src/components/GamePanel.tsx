@@ -70,6 +70,9 @@ export default function GamePanel({
             Match timer: {Math.max(0, timer.remainingSeconds)}s
           </div>
         )}
+        {timer && !timer.isRunning && timer.remainingSeconds <= 0 && (
+          <div className="timerEndedNotice">Match Timer has Ended</div>
+        )}
         {showTimerStartNotice && <div className="timerStartNotice">Timer started</div>}
         <div className="dottedList" role="list">
           {players.map((player, index) => (
@@ -86,7 +89,8 @@ export default function GamePanel({
         </div>
         {view && (
           <div className="spacedSection">
-            <h3>Current Scores</h3>
+            <h3>Leaderboard Scores</h3>
+            <div className="smallAndGray">Total wins so far for each player</div>
             <div className="dottedList" role="list">
               {players.map((player, index) => (
                 <div className="dottedListItem" role="listitem" key={`${player.username}-score`}>

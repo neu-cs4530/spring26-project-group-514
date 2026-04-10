@@ -43,3 +43,9 @@
   color: #0a7a2f;
   font-weight: 600;
 }
+
+.timerEndedNotice {
+  margin-top: 0.25rem;
+  color: #8b1e1e;
+  font-weight: 700;
+}

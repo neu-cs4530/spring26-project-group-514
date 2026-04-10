@@ -26,6 +26,20 @@ async function createCompletedNimGame() {
 }
 
 describe("US3 stats and leaderboard endpoints", () => {
+  it("returns zeroed stats for a user without recorded games", async () => {
+    const statsRes = await supertest(app).get(`/api/stats/player/user3`);
+    expect(statsRes.status).toBe(200);
+    expect(statsRes.body).toMatchObject({
+      username: "user3",
+      display: "user3",
+      wins: 0,
+      losses: 0,
+      gamesPlayed: 0,
+      winRate: 0,
+      badges: [],
+    });
+  });
+
   it("records completed games into history and stats, then surfaces them in leaderboard", async () => {
     const gameId = await createCompletedNimGame();
 
@@ -46,6 +60,34 @@ describe("US3 stats and leaderboard endpoints", () => {
     expect(leaderboardRes.status).toBe(200);
     const leaderboardEntries = leaderboardRes.body.data as Array<{ username: string }>;
     expect(leaderboardEntries.some((entry) => entry.username === "user1")).toBe(true);
+  });
+
+  it("filters match history by game type, opponent, and date range", async () => {
+    await createCompletedNimGame();
+
+    const filteredByType = await supertest(app).get(
+      `/api/stats/history/user1?page=1&limit=10&gameType=guess`,
+    );
+    expect(filteredByType.status).toBe(200);
+    expect(filteredByType.body.data).toHaveLength(0);
+
+    const filteredByOpponent = await supertest(app).get(
+      `/api/stats/history/user1?page=1&limit=10&opponent=user2`,
+    );
+    expect(filteredByOpponent.status).toBe(200);
+    expect(filteredByOpponent.body.data).toHaveLength(1);
+
+    const filteredByDateFrom = await supertest(app).get(
+      `/api/stats/history/user1?page=1&limit=10&dateFrom=2100-01-01T00:00:00.000Z`,
+    );
+    expect(filteredByDateFrom.status).toBe(200);
+    expect(filteredByDateFrom.body.data).toHaveLength(0);
+
+    const filteredByDateTo = await supertest(app).get(
+      `/api/stats/history/user1?page=1&limit=10&dateTo=2020-01-01T00:00:00.000Z`,
+    );
+    expect(filteredByDateTo.status).toBe(200);
+    expect(filteredByDateTo.body.data).toHaveLength(0);
   });
 
   it("supports leaderboard period filter validation", async () => {
@@ -72,6 +114,10 @@ describe("US3 stats and leaderboard endpoints", () => {
       .post(`/api/stats/leaderboard-opt-out`)
       .send({ auth: auth1, payload: { optOut: true } });
     expect(optOutRes.status).toBe(200);
+
+    const optOutStatus = await supertest(app).get(`/api/stats/leaderboard-opt-out/user1`);
+    expect(optOutStatus.status).toBe(200);
+    expect(optOutStatus.body).toStrictEqual({ optOut: true });
 
     const statsRes = await supertest(app).get(`/api/stats/player/user1`);
     expect(statsRes.status).toBe(200);
