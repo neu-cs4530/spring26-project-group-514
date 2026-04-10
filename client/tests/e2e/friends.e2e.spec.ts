@@ -19,13 +19,19 @@ test.afterEach(async () => {
 });
 
 test.describe("Friend requests", () => {
-  // username1 = fresh random user (page1), username2 = "user3" (page2, display = "Frau Drei")
   let username1: string;
   let username2: string;
 
   test.beforeEach(async () => {
     ({ username1, username2 } = await createTwoUsers(page1, page2));
-    await Promise.all([page1.goto("/friends"), page2.goto("/friends")]);
+    // Navigate via nav links — page.goto() after login wipes auth state
+    await page1.getByRole("link", { name: "Friends" }).click();
+    await page1.waitForURL("/friends");
+    // Sync point: confirm the Friends page is fully rendered before the test runs
+    await expect(page1.getByPlaceholder("Enter username...")).toBeVisible();
+    await page2.getByRole("link", { name: "Friends" }).click();
+    await page2.waitForURL("/friends");
+    await expect(page2.getByPlaceholder("Enter username...")).toBeVisible();
   });
 
   test("should show a sent request in the Sent Requests section", async () => {
@@ -38,14 +44,14 @@ test.describe("Friend requests", () => {
   test("should deliver an incoming friend request in real time to the recipient", async () => {
     await page1.getByPlaceholder("Enter username...").fill(username2);
     await page1.getByRole("button", { name: "Send Request" }).click();
-    // page2 (user3) is already on /friends — the incoming request from username1
-    // should appear without a page refresh (CoS 1.5)
+    // page2 is already on /friends — request should appear without a page refresh
     await expect(page2.getByRole("listitem").filter({ hasText: username1 })).toBeVisible();
   });
 
   test("should show a notification badge for an incoming friend request", async () => {
-    // user3 navigates away before the request arrives
-    await page2.goto("/");
+    // user2 navigates away via nav link before the request arrives
+    await page2.getByRole("link", { name: "Home" }).click();
+    await page2.waitForURL("/");
     await page1.getByPlaceholder("Enter username...").fill(username2);
     await page1.getByRole("button", { name: "Send Request" }).click();
     await expect(page2.locator(".notification-badge")).toBeVisible();
@@ -54,7 +60,6 @@ test.describe("Friend requests", () => {
   test("should show both users as friends after a request is accepted", async () => {
     await page1.getByPlaceholder("Enter username...").fill(username2);
     await page1.getByRole("button", { name: "Send Request" }).click();
-    // user3 accepts the incoming request from username1
     await expect(page2.getByRole("listitem").filter({ hasText: username1 })).toBeVisible();
     await page2
       .getByRole("listitem")
@@ -63,29 +68,32 @@ test.describe("Friend requests", () => {
       .first()
       .click();
     await expect(page2.getByText("No incoming requests.")).toBeVisible();
-    // user3 should now see username1 in their friends list (CoS 1.3)
+    // Both pages should update in real time without navigation (CoS 1.3, 1.5)
     await expect(page2.getByRole("listitem").filter({ hasText: username1 })).toBeVisible();
-    // username1 is a new account so any friend entry means user3 was added (CoS 1.5)
     await expect(page1.getByText("No friends yet...")).not.toBeVisible();
   });
 });
 
 test.describe("Removing a friend", () => {
   let username1: string;
+  //let username2: string;
 
   test.beforeEach(async () => {
-    ({ username1 } = await makeFriends(page1, page2));
-    await Promise.all([page1.goto("/friends"), page2.goto("/friends")]);
+    // makeFriends ends with both pages on /friends — no further navigation needed
+    const friends = await makeFriends(page1, page2);
+    username1 = friends.username1;
+    //username2 = friends.username2;
   });
 
   test("should remove a friend and update both users' lists in real time", async () => {
-    // username1 is a fresh account with exactly one friend, so there is only one Remove button
+    // username1 is a fresh account with exactly one friend, so there is only one Remove button.
+    // Waiting for it also confirms the friends list has finished loading.
     await expect(page1.getByRole("button", { name: /remove/i })).toBeVisible();
     await page1.getByRole("button", { name: /remove/i }).click();
     await page1.getByRole("button", { name: /yes, remove/i }).click();
     // username1's list should be empty (CoS 1.7)
     await expect(page1.getByText("No friends yet...")).toBeVisible();
-    // user3 should no longer see username1 in their friends list in real time
+    // username2 should no longer see username1 in real time
     await expect(page2.getByRole("listitem").filter({ hasText: username1 })).not.toBeVisible();
   });
 });
