@@ -100,7 +100,7 @@ endpoints in `server/src/app.ts`.
 | `/:username` | POST   | Update user's displayname or password |
 | `/:username` | GET    | Get information about a user          |
 
-### `/api/friend`
+#### `/api/friend`
 
 | Method | Route                 | Purpose                                                            |
 | ------ | --------------------- | ------------------------------------------------------------------ |
@@ -110,7 +110,7 @@ endpoints in `server/src/app.ts`.
 | GET    | `/list/:username`     | Get user's accepted friends list                                   |
 | GET    | `/requests/:username` | Get pending incoming/outgoing requests                             |
 
-### `/api/dm`
+#### `/api/dm`
 
 | Method | Route             | Purpose                                        |
 | ------ | ----------------- | ---------------------------------------------- |
@@ -121,7 +121,7 @@ endpoints in `server/src/app.ts`.
 the request to authenticate themselves `/:id` needs both "x-username" and
 "x-password"
 
-### `/api/block`
+#### `/api/block`
 
 | Method | Route             | Purpose                                                |
 | ------ | ----------------- | ------------------------------------------------------ |
@@ -132,7 +132,7 @@ the request to authenticate themselves `/:id` needs both "x-username" and
 `/list/:username` needs "x-password: [insert user password]" as a header in
 the request to authenticate themselves
 
-#### Side-effects of blocking
+##### Side-effects of blocking
 
 - Blocking a user should cascade: remove existing friendship, cancel pending
   friend requests, and remove DMs between both users.

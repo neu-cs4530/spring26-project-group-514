@@ -124,3 +124,77 @@ export async function createAndLoadGame(
 
   return username1;
 }
+
+/**
+ * Create two fresh random users in parallel and log them both in.
+ * Both pages will be on "/" after this returns.
+ * Uses parallel creation (the v5 timing fix).
+ */
+export async function createTwoUsers(
+  page1: Page,
+  page2: Page,
+): Promise<{ username1: string; password1: string; username2: string; password2: string }> {
+  const username1 = "user" + Math.floor(Math.random() * 2_000_000);
+  const password1 = "pwd_for_" + username1;
+  const username2 = "user" + Math.floor(Math.random() * 2_000_000);
+  const password2 = "pwd_for_" + username2;
+
+  await Promise.all([
+    (async () => {
+      await page1.goto("/login");
+      await page1.getByRole("button", { name: "Create New Account" }).click();
+      await page1.getByLabel("Username").fill(username1);
+      await page1.getByLabel("Password", { exact: true }).fill(password1);
+      await page1.getByLabel("Confirm Password").fill(password1);
+      await page1.getByRole("button", { name: "Sign Up" }).click();
+      await page1.waitForURL("/");
+    })(),
+    (async () => {
+      await page2.goto("/login");
+      await page2.getByRole("button", { name: "Create New Account" }).click();
+      await page2.getByLabel("Username").fill(username2);
+      await page2.getByLabel("Password", { exact: true }).fill(password2);
+      await page2.getByLabel("Confirm Password").fill(password2);
+      await page2.getByRole("button", { name: "Sign Up" }).click();
+      await page2.waitForURL("/");
+    })(),
+  ]);
+
+  return { username1, password1, username2, password2 };
+}
+
+/**
+ * Create two fresh random users and establish a friendship between them via
+ * the UI using nav-link navigation only — page.goto() after login wipes React's
+ * auth state, so all post-login navigation must go through the nav.
+ * Both pages will be on "/friends" after this returns.
+ */
+export async function makeFriends(
+  page1: Page,
+  page2: Page,
+): Promise<{ username1: string; password1: string; username2: string; password2: string }> {
+  const creds = await createTwoUsers(page1, page2);
+  const { username1, username2 } = creds;
+
+  // Navigate via the nav link NOT page.goto(), preserve auth state
+  await page1.getByRole("link", { name: "Friends" }).click();
+  await page1.waitForURL("/friends");
+  await expect(page1.getByPlaceholder("Enter username...")).toBeVisible();
+  await page1.getByPlaceholder("Enter username...").fill(username2);
+  await page1.getByRole("button", { name: "Send Request" }).click();
+  await expect(page1.getByText("Request sent!")).toBeVisible();
+
+  await page2.getByRole("link", { name: "Friends" }).click();
+  await page2.waitForURL("/friends");
+  // Wait for the socket to deliver the incoming request before trying to accept
+  await expect(page2.getByRole("listitem").filter({ hasText: username1 })).toBeVisible();
+  await page2
+    .getByRole("listitem")
+    .filter({ hasText: username1 })
+    .getByRole("button")
+    .first()
+    .click();
+  await expect(page2.getByText("No incoming requests.")).toBeVisible();
+
+  return creds;
+}
