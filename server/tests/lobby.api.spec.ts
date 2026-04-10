@@ -521,6 +521,404 @@ describe("Private game visibility (CoS 2.1, 2.2)", () => {
   });
 });
 
+describe("POST /api/lobby/join-by-code", () => {
+  it("returns 400 on malformed payload", async () => {
+    response = await supertest(app).post("/api/lobby/join-by-code").send({ auth: auth1 });
+    expect(response.status).toBe(400);
+  });
+
+  it("returns 403 with invalid auth", async () => {
+    response = await supertest(app)
+      .post("/api/lobby/join-by-code")
+      .send({ auth: authBad, payload: { code: "AAAAAAAA" } });
+    expect(response.status).toBe(403);
+  });
+
+  it("returns 400 when no lobby matches the code", async () => {
+    response = await supertest(app)
+      .post("/api/lobby/join-by-code")
+      .send({ auth: auth2, payload: { code: "NOTACODE" } });
+    expect(response.status).toBe(400);
+    expect(response.body).toStrictEqual({ error: "No lobby found with code NOTACODE" });
+  });
+
+  it("joins a public lobby by code", async () => {
+    const created = await supertest(app)
+      .post("/api/lobby/create")
+      .send({ auth: auth1, payload: { type: "nim", isPrivate: false } });
+    const code = created.body.code as string;
+
+    response = await supertest(app)
+      .post("/api/lobby/join-by-code")
+      .send({ auth: auth2, payload: { code } });
+
+    expect(response.status).toBe(200);
+    expect(usernamesFromLobbyPlayers(response.body)).toContain("user2");
+  });
+});
+
+describe("POST /api/lobby/:id/invite — error paths", () => {
+  it("returns 400 on malformed payload", async () => {
+    response = await supertest(app)
+      .post(`/api/lobby/${randomUUID()}/invite`)
+      .send({ auth: auth1 });
+    expect(response.status).toBe(400);
+  });
+
+  it("returns 403 with invalid auth", async () => {
+    response = await supertest(app)
+      .post(`/api/lobby/${randomUUID()}/invite`)
+      .send({ auth: authBad, payload: { username: "user2" } });
+    expect(response.status).toBe(403);
+  });
+
+  it("returns 400 when inviting a non-existent user", async () => {
+    const created = await supertest(app)
+      .post("/api/lobby/create")
+      .send({ auth: auth1, payload: { type: "nim", isPrivate: true } });
+
+    response = await supertest(app)
+      .post(`/api/lobby/${created.body.lobbyId}/invite`)
+      .send({ auth: auth1, payload: { username: "noSuchUser" } });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toStrictEqual({ error: "User noSuchUser not found" });
+  });
+
+  it("returns 400 when user is already in the lobby", async () => {
+    const created = await supertest(app)
+      .post("/api/lobby/create")
+      .send({ auth: auth1, payload: { type: "nim", isPrivate: true } });
+    const lobbyId = created.body.lobbyId as string;
+
+    await supertest(app)
+      .post(`/api/lobby/${lobbyId}/invite`)
+      .send({ auth: auth1, payload: { username: "user2" } });
+
+    response = await supertest(app)
+      .post(`/api/lobby/${lobbyId}/invite`)
+      .send({ auth: auth1, payload: { username: "user2" } });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toStrictEqual({ error: "User user2 is already in this lobby" });
+  });
+
+  it("returns 400 when non-host tries to invite", async () => {
+    const created = await supertest(app)
+      .post("/api/lobby/create")
+      .send({ auth: auth1, payload: { type: "nim", isPrivate: false } });
+    const lobbyId = created.body.lobbyId as string;
+
+    await supertest(app).post(`/api/lobby/${lobbyId}/join`).send({ auth: auth2, payload: {} });
+
+    response = await supertest(app)
+      .post(`/api/lobby/${lobbyId}/invite`)
+      .send({ auth: auth2, payload: { username: "user3" } });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toStrictEqual({ error: "Only the host can invite players" });
+  });
+});
+
+describe("POST /api/lobby/:id/join — error paths", () => {
+  it("returns 400 on malformed payload", async () => {
+    response = await supertest(app)
+      .post(`/api/lobby/${randomUUID()}/join`)
+      .send({ auth: auth1, payload: 1 });
+    expect(response.status).toBe(400);
+  });
+
+  it("returns 403 with invalid auth", async () => {
+    response = await supertest(app)
+      .post(`/api/lobby/${randomUUID()}/join`)
+      .send({ auth: authBad, payload: {} });
+    expect(response.status).toBe(403);
+  });
+});
+
+describe("POST /api/lobby/:id/leave — error paths", () => {
+  it("returns 400 on malformed payload", async () => {
+    response = await supertest(app)
+      .post(`/api/lobby/${randomUUID()}/leave`)
+      .send({ auth: auth1, payload: 1 });
+    expect(response.status).toBe(400);
+  });
+
+  it("returns 403 with invalid auth", async () => {
+    response = await supertest(app)
+      .post(`/api/lobby/${randomUUID()}/leave`)
+      .send({ auth: authBad, payload: {} });
+    expect(response.status).toBe(403);
+  });
+
+  it("successfully leaves a public lobby", async () => {
+    const created = await supertest(app)
+      .post("/api/lobby/create")
+      .send({ auth: auth1, payload: { type: "nim", isPrivate: false } });
+    const lobbyId = created.body.lobbyId as string;
+
+    await supertest(app).post(`/api/lobby/${lobbyId}/join`).send({ auth: auth2, payload: {} });
+
+    response = await supertest(app)
+      .post(`/api/lobby/${lobbyId}/leave`)
+      .send({ auth: auth2, payload: {} });
+
+    expect(response.status).toBe(200);
+    expect(usernamesFromLobbyPlayers(response.body)).not.toContain("user2");
+  });
+});
+
+describe("POST /api/lobby/:id/decline — error paths", () => {
+  it("returns 400 on malformed payload", async () => {
+    response = await supertest(app)
+      .post(`/api/lobby/${randomUUID()}/decline`)
+      .send({ auth: auth1, payload: 1 });
+    expect(response.status).toBe(400);
+  });
+
+  it("returns 403 with invalid auth", async () => {
+    response = await supertest(app)
+      .post(`/api/lobby/${randomUUID()}/decline`)
+      .send({ auth: authBad, payload: {} });
+    expect(response.status).toBe(403);
+  });
+
+  it("returns 400 when user is not invited", async () => {
+    const created = await supertest(app)
+      .post("/api/lobby/create")
+      .send({ auth: auth1, payload: { type: "nim", isPrivate: true } });
+
+    response = await supertest(app)
+      .post(`/api/lobby/${created.body.lobbyId}/decline`)
+      .send({ auth: auth2, payload: {} });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toStrictEqual({ error: "You are not invited to this lobby" });
+  });
+});
+
+describe("POST /api/lobby/:id/remove — error paths", () => {
+  it("returns 400 on malformed payload", async () => {
+    response = await supertest(app)
+      .post(`/api/lobby/${randomUUID()}/remove`)
+      .send({ auth: auth1 });
+    expect(response.status).toBe(400);
+  });
+
+  it("returns 403 with invalid auth", async () => {
+    response = await supertest(app)
+      .post(`/api/lobby/${randomUUID()}/remove`)
+      .send({ auth: authBad, payload: { username: "user2" } });
+    expect(response.status).toBe(403);
+  });
+
+  it("returns 400 when trying to remove the host", async () => {
+    const created = await supertest(app)
+      .post("/api/lobby/create")
+      .send({ auth: auth1, payload: { type: "nim", isPrivate: true } });
+
+    response = await supertest(app)
+      .post(`/api/lobby/${created.body.lobbyId}/remove`)
+      .send({ auth: auth1, payload: { username: "user1" } });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toStrictEqual({ error: "Cannot remove the host" });
+  });
+
+  it("returns 400 when non-host tries to remove", async () => {
+    const created = await supertest(app)
+      .post("/api/lobby/create")
+      .send({ auth: auth1, payload: { type: "nim", isPrivate: false } });
+    const lobbyId = created.body.lobbyId as string;
+
+    await supertest(app).post(`/api/lobby/${lobbyId}/join`).send({ auth: auth2, payload: {} });
+
+    response = await supertest(app)
+      .post(`/api/lobby/${lobbyId}/remove`)
+      .send({ auth: auth2, payload: { username: "user1" } });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toStrictEqual({ error: "Only the host can remove players" });
+  });
+
+  it("returns 400 when target user does not exist", async () => {
+    const created = await supertest(app)
+      .post("/api/lobby/create")
+      .send({ auth: auth1, payload: { type: "nim", isPrivate: true } });
+
+    response = await supertest(app)
+      .post(`/api/lobby/${created.body.lobbyId}/remove`)
+      .send({ auth: auth1, payload: { username: "noSuchUser" } });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toStrictEqual({ error: "User noSuchUser not found" });
+  });
+});
+
+describe("POST /api/lobby/:id/settings — error paths", () => {
+  it("returns 400 on malformed payload", async () => {
+    response = await supertest(app)
+      .post(`/api/lobby/${randomUUID()}/settings`)
+      .send({ auth: auth1 });
+    expect(response.status).toBe(400);
+  });
+
+  it("returns 403 with invalid auth", async () => {
+    response = await supertest(app)
+      .post(`/api/lobby/${randomUUID()}/settings`)
+      .send({
+        auth: authBad,
+        payload: { mode: "standard", difficulty: "normal", timerSeconds: null },
+      });
+    expect(response.status).toBe(403);
+  });
+});
+
+describe("POST /api/lobby/:id/start — error paths", () => {
+  it("returns 400 on malformed payload", async () => {
+    response = await supertest(app)
+      .post(`/api/lobby/${randomUUID()}/start`)
+      .send({ auth: auth1, payload: 1 });
+    expect(response.status).toBe(400);
+  });
+
+  it("returns 403 with invalid auth", async () => {
+    response = await supertest(app)
+      .post(`/api/lobby/${randomUUID()}/start`)
+      .send({ auth: authBad, payload: {} });
+    expect(response.status).toBe(403);
+  });
+
+  it("returns 400 when non-host tries to start", async () => {
+    const created = await supertest(app)
+      .post("/api/lobby/create")
+      .send({ auth: auth1, payload: { type: "nim", isPrivate: false } });
+    const lobbyId = created.body.lobbyId as string;
+
+    await supertest(app).post(`/api/lobby/${lobbyId}/join`).send({ auth: auth2, payload: {} });
+
+    response = await supertest(app)
+      .post(`/api/lobby/${lobbyId}/start`)
+      .send({ auth: auth2, payload: {} });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toStrictEqual({ error: "Only the host can start the game" });
+  });
+});
+
+describe("Lobby actions after start are rejected", () => {
+  it("returns 400 when inviting to a started lobby", async () => {
+    const created = await supertest(app)
+      .post("/api/lobby/create")
+      .send({ auth: auth1, payload: { type: "nim", isPrivate: false } });
+    const lobbyId = created.body.lobbyId as string;
+
+    await supertest(app).post(`/api/lobby/${lobbyId}/join`).send({ auth: auth2, payload: {} });
+    await supertest(app).post(`/api/lobby/${lobbyId}/start`).send({ auth: auth1, payload: {} });
+
+    response = await supertest(app)
+      .post(`/api/lobby/${lobbyId}/invite`)
+      .send({ auth: auth1, payload: { username: "user3" } });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toStrictEqual({ error: "Lobby already started" });
+  });
+
+  it("returns 400 when joining a started lobby", async () => {
+    const created = await supertest(app)
+      .post("/api/lobby/create")
+      .send({ auth: auth1, payload: { type: "nim", isPrivate: false } });
+    const lobbyId = created.body.lobbyId as string;
+
+    await supertest(app).post(`/api/lobby/${lobbyId}/join`).send({ auth: auth2, payload: {} });
+    await supertest(app).post(`/api/lobby/${lobbyId}/start`).send({ auth: auth1, payload: {} });
+
+    response = await supertest(app)
+      .post(`/api/lobby/${lobbyId}/join`)
+      .send({ auth: auth3, payload: {} });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toStrictEqual({ error: "Lobby already started" });
+  });
+
+  it("returns 400 when leaving a started lobby", async () => {
+    const created = await supertest(app)
+      .post("/api/lobby/create")
+      .send({ auth: auth1, payload: { type: "nim", isPrivate: false } });
+    const lobbyId = created.body.lobbyId as string;
+
+    await supertest(app).post(`/api/lobby/${lobbyId}/join`).send({ auth: auth2, payload: {} });
+    await supertest(app).post(`/api/lobby/${lobbyId}/start`).send({ auth: auth1, payload: {} });
+
+    response = await supertest(app)
+      .post(`/api/lobby/${lobbyId}/leave`)
+      .send({ auth: auth2, payload: {} });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toStrictEqual({ error: "Lobby already started" });
+  });
+
+  it("returns 400 when updating settings of a started lobby", async () => {
+    const created = await supertest(app)
+      .post("/api/lobby/create")
+      .send({ auth: auth1, payload: { type: "nim", isPrivate: false } });
+    const lobbyId = created.body.lobbyId as string;
+
+    await supertest(app).post(`/api/lobby/${lobbyId}/join`).send({ auth: auth2, payload: {} });
+    await supertest(app).post(`/api/lobby/${lobbyId}/start`).send({ auth: auth1, payload: {} });
+
+    response = await supertest(app)
+      .post(`/api/lobby/${lobbyId}/settings`)
+      .send({
+        auth: auth1,
+        payload: { mode: "casual", difficulty: "hard", timerSeconds: 30 },
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toStrictEqual({ error: "Lobby already started" });
+  });
+
+  it("returns 400 when declining invite on a started lobby", async () => {
+    const created = await supertest(app)
+      .post("/api/lobby/create")
+      .send({ auth: auth1, payload: { type: "nim", isPrivate: true } });
+    const lobbyId = created.body.lobbyId as string;
+
+    await supertest(app)
+      .post(`/api/lobby/${lobbyId}/invite`)
+      .send({ auth: auth1, payload: { username: "user2" } });
+    await supertest(app)
+      .post(`/api/lobby/${lobbyId}/invite`)
+      .send({ auth: auth1, payload: { username: "user3" } });
+    await supertest(app).post(`/api/lobby/${lobbyId}/join`).send({ auth: auth2, payload: {} });
+    await supertest(app).post(`/api/lobby/${lobbyId}/start`).send({ auth: auth1, payload: {} });
+
+    response = await supertest(app)
+      .post(`/api/lobby/${lobbyId}/decline`)
+      .send({ auth: auth3, payload: {} });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toStrictEqual({ error: "Lobby already started" });
+  });
+
+  it("returns 400 when removing a player from a started lobby", async () => {
+    const created = await supertest(app)
+      .post("/api/lobby/create")
+      .send({ auth: auth1, payload: { type: "nim", isPrivate: false } });
+    const lobbyId = created.body.lobbyId as string;
+
+    await supertest(app).post(`/api/lobby/${lobbyId}/join`).send({ auth: auth2, payload: {} });
+    await supertest(app).post(`/api/lobby/${lobbyId}/start`).send({ auth: auth1, payload: {} });
+
+    response = await supertest(app)
+      .post(`/api/lobby/${lobbyId}/remove`)
+      .send({ auth: auth1, payload: { username: "user2" } });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toStrictEqual({ error: "Lobby already started" });
+  });
+});
+
 describe("Private game access control", () => {
   it("a participant can GET a private game by id", async () => {
     const gameId = await createPrivateGame();
