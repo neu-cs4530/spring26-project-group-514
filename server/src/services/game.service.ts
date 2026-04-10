@@ -4,8 +4,6 @@ import {
   type GamePlayerScore,
   type GameScoresPayload,
   type GameTimerPayload,
-  type GuessState,
-  type NimState,
   type TaggedGameView,
 } from "@gamenite/shared";
 import { createChat } from "./chat.service.ts";

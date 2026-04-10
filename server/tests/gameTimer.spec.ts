@@ -7,9 +7,9 @@ const mockedGetGameScores = vi.hoisted(() => vi.fn());
 const mockedExpireGameByTimer = vi.hoisted(() => vi.fn());
 
 vi.mock("../src/services/game.service.ts", () => ({
-  getGameTimer: (...args: unknown[]) => mockedGetGameTimer(...args),
-  getGameScores: (...args: unknown[]) => mockedGetGameScores(...args),
-  expireGameByTimer: (...args: unknown[]) => mockedExpireGameByTimer(...args),
+  getGameTimer: mockedGetGameTimer,
+  getGameScores: mockedGetGameScores,
+  expireGameByTimer: mockedExpireGameByTimer,
 }));
 
 const MockGameServer = vi.fn(

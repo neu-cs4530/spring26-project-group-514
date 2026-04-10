@@ -1,5 +1,5 @@
-import { render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
+import { beforeEach, describe, it, vi } from "vitest";
 
 import ViewProfile from "../../src/pages/ViewProfile.tsx";
 
@@ -13,42 +13,36 @@ const mockedUseFriendList = vi.hoisted(() => vi.fn());
 const mockedUseFriendRequests = vi.hoisted(() => vi.fn());
 
 vi.mock("../../src/hooks/useAuth.ts", () => ({
-  default: () => mockedUseAuth(),
+  default: mockedUseAuth,
 }));
 
 vi.mock("../../src/hooks/useTimeSince.ts", () => ({
-  default: () => mockedUseTimeSince(),
+  default: mockedUseTimeSince,
 }));
 
 vi.mock("../../src/services/userService", () => ({
-  getUserById: (...args: unknown[]) => mockedGetUserById(...args),
+  getUserById: mockedGetUserById,
 }));
 
 vi.mock("../../src/services/statsService.ts", () => ({
-  getPlayerStats: (...args: unknown[]) => mockedGetPlayerStats(...args),
-  getMatchHistory: (...args: unknown[]) => mockedGetMatchHistory(...args),
+  getPlayerStats: mockedGetPlayerStats,
+  getMatchHistory: mockedGetMatchHistory,
 }));
 
 vi.mock("../../src/hooks/useBlockList.ts", () => ({
-  default: () => mockedUseBlockList(),
+  default: mockedUseBlockList,
 }));
 
 vi.mock("../../src/hooks/useFriendList.ts", () => ({
-  default: () => mockedUseFriendList(),
+  default: mockedUseFriendList,
 }));
 
 vi.mock("../../src/hooks/useFriendRequests.ts", () => ({
-  default: () => mockedUseFriendRequests(),
+  default: mockedUseFriendRequests,
 }));
 
 vi.mock("../../src/components/ConfirmModal", () => ({
   default: () => <div>Confirm modal</div>,
-}));
-
-vi.mock("../../src/components/Icons", () => ({
-  BlockedIcon: () => <span>Blocked</span>,
-  CheckIcon: () => <span>Check</span>,
-  CrossIcon: () => <span>Cross</span>,
 }));
 
 describe("ViewProfile page", () => {
@@ -60,9 +54,9 @@ describe("ViewProfile page", () => {
       display: "User Two",
       createdAt: new Date("2026-04-01T00:00:00.000Z"),
     });
-    mockedGetPlayerStats.mockImplementation(async (username: string) => {
+    mockedGetPlayerStats.mockImplementation((username: string) => {
       if (username === "user1") {
-        return {
+        return Promise.resolve({
           username: "user1",
           display: "user1",
           wins: 3,
@@ -70,9 +64,9 @@ describe("ViewProfile page", () => {
           gamesPlayed: 5,
           winRate: 0.6,
           badges: ["first_win"],
-        };
+        });
       }
-      return {
+      return Promise.resolve({
         username: "user2",
         display: "user2",
         wins: 5,
@@ -80,7 +74,7 @@ describe("ViewProfile page", () => {
         gamesPlayed: 6,
         winRate: 5 / 6,
         badges: ["first_win", "ten_wins"],
-      };
+      });
     });
     mockedGetMatchHistory.mockResolvedValue({
       data: [

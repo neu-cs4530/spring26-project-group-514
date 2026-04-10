@@ -11,11 +11,11 @@ const mockedGetPlayerStats = vi.hoisted(() => vi.fn());
 const mockedSetLeaderboardOptOut = vi.hoisted(() => vi.fn());
 
 vi.mock("../../src/hooks/useLoginContext", () => ({
-  default: () => mockedUseLoginContext(),
+  default: mockedUseLoginContext,
 }));
 
 vi.mock("../../src/hooks/useAuth.ts", () => ({
-  default: () => mockedUseAuth(),
+  default: mockedUseAuth,
 }));
 
 vi.mock("../../src/hooks/useTimeSince", () => ({
@@ -23,13 +23,13 @@ vi.mock("../../src/hooks/useTimeSince", () => ({
 }));
 
 vi.mock("../../src/hooks/useEditProfileForm", () => ({
-  default: () => mockedUseEditProfileForm(),
+  default: mockedUseEditProfileForm,
 }));
 
 vi.mock("../../src/services/statsService.ts", () => ({
-  getLeaderboardOptOut: (...args: unknown[]) => mockedGetLeaderboardOptOut(...args),
-  getPlayerStats: (...args: unknown[]) => mockedGetPlayerStats(...args),
-  setLeaderboardOptOut: (...args: unknown[]) => mockedSetLeaderboardOptOut(...args),
+  getLeaderboardOptOut: mockedGetLeaderboardOptOut,
+  getPlayerStats: mockedGetPlayerStats,
+  setLeaderboardOptOut: mockedSetLeaderboardOptOut,
 }));
 
 describe("UpdateProfile page", () => {

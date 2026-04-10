@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, it, vi } from "vitest";
 
 import GamePanel from "../../src/components/GamePanel.tsx";
 
@@ -7,11 +7,11 @@ const mockedUseLoginContext = vi.hoisted(() => vi.fn());
 const mockedUseSocketsForGame = vi.hoisted(() => vi.fn());
 
 vi.mock("../../src/hooks/useLoginContext.ts", () => ({
-  default: () => mockedUseLoginContext(),
+  default: mockedUseLoginContext,
 }));
 
 vi.mock("../../src/hooks/useSocketsForGame.ts", () => ({
-  default: (...args: unknown[]) => mockedUseSocketsForGame(...args),
+  default: mockedUseSocketsForGame,
 }));
 
 vi.mock("../../src/hooks/useTimeSince.ts", () => ({
