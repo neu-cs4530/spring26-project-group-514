@@ -132,6 +132,33 @@ the request to authenticate themselves `/:id` needs both "x-username" and
 `/list/:username` needs "x-password: [insert user password]" as a header in
 the request to authenticate themselves
 
+### `/api/lobby`
+
+| Method | Route           | Purpose                                                                             |
+| ------ | --------------- | ----------------------------------------------------------------------------------- |
+| POST   | `/create`       | Create a new lobby (`{ auth, payload: {type, isPrivate} }`)                         |
+| GET    | `/list`         | List public lobbies                                                                 |
+| POST   | `/invited`      | List pending private-lobby invites for authenticated user (`{ auth, payload: {} }`) |
+| GET    | `/:id`          | Get lobby details by lobby ID                                                       |
+| POST   | `/join-by-code` | Join a private lobby using invite code (`{ auth, payload: {code} }`)                |
+| POST   | `/:id/invite`   | Invite a user to a lobby (`{ auth, payload: {username} }`)                          |
+| POST   | `/:id/join`     | Join a lobby (`{ auth, payload: {} }`)                                              |
+| POST   | `/:id/leave`    | Leave a lobby (`{ auth, payload: {} }`)                                             |
+| POST   | `/:id/decline`  | Decline a lobby invite (`{ auth, payload: {} }`)                                    |
+| POST   | `/:id/remove`   | Remove a player from a lobby (`{ auth, payload: {username} }`)                      |
+| POST   | `/:id/settings` | Update lobby settings (`{ auth, payload: {mode, difficulty, timerSeconds} }`)       |
+| POST   | `/:id/start`    | Start a lobby and create a game (`{ auth, payload: {} }`)                           |
+
+### `/api/stats`
+
+| Method | Route                            | Purpose                                                                        |
+| ------ | -------------------------------- | ------------------------------------------------------------------------------ | ----- | ------------------------ |
+| GET    | `/player/:username`              | Get aggregate player stats                                                     |
+| GET    | `/history/:username`             | Get paginated match history (supports `page`, `limit`, and filters)            |
+| GET    | `/leaderboard`                   | Get paginated leaderboard (`period=week                                        | month | all`, plus `page/limit`) |
+| POST   | `/leaderboard-opt-out`           | Set leaderboard opt-out for authenticated user (`{ auth, payload: {optOut} }`) |
+| GET    | `/leaderboard-opt-out/:username` | Get a user's leaderboard opt-out status                                        |
+
 #### Side-effects of blocking
 
 - Blocking a user should cascade: remove existing friendship, cancel pending
