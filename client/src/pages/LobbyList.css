@@ -1,3 +1,26 @@
-.lobbyListJoinButton {
-  margin-left: 0.5rem;
+.lobbylist-page .list > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.lobbylist-page .lobby-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.lobbylist-page .join-code-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.lobbylist-page .join-code-row input {
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--gray-foreground);
+  min-height: 2.5rem;
 }

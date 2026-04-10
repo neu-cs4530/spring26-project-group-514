@@ -100,7 +100,7 @@ endpoints in `server/src/app.ts`.
 | `/:username` | POST   | Update user's displayname or password |
 | `/:username` | GET    | Get information about a user          |
 
-### `/api/friend`
+#### `/api/friend`
 
 | Method | Route                 | Purpose                                                            |
 | ------ | --------------------- | ------------------------------------------------------------------ |
@@ -110,7 +110,7 @@ endpoints in `server/src/app.ts`.
 | GET    | `/list/:username`     | Get user's accepted friends list                                   |
 | GET    | `/requests/:username` | Get pending incoming/outgoing requests                             |
 
-### `/api/dm`
+#### `/api/dm`
 
 | Method | Route             | Purpose                                        |
 | ------ | ----------------- | ---------------------------------------------- |
@@ -121,7 +121,7 @@ endpoints in `server/src/app.ts`.
 the request to authenticate themselves `/:id` needs both "x-username" and
 "x-password"
 
-### `/api/block`
+#### `/api/block`
 
 | Method | Route             | Purpose                                                |
 | ------ | ----------------- | ------------------------------------------------------ |
@@ -132,13 +132,57 @@ the request to authenticate themselves `/:id` needs both "x-username" and
 `/list/:username` needs "x-password: [insert user password]" as a header in
 the request to authenticate themselves
 
-#### Side-effects of blocking
+##### Side-effects of blocking
 
 - Blocking a user should cascade: remove existing friendship, cancel pending
   friend requests, and remove DMs between both users.
 - Blocking is one-directional (A blocks B does not mean B blocks A).
 - `sendFriendRequest` and DM messaging should check the block list and reject
   if either user has blocked the other.
+
+### `/api/lobby`
+
+| Method | Route           | Description                                                       |
+| ------ | --------------- | ----------------------------------------------------------------- |
+| POST   | `/create`       | Create a new lobby (public/private toggle, game type, settings)   |
+| GET    | `/list`         | List all public lobbies that haven't started yet                  |
+| POST   | `/invited`      | Get all lobbies where the authenticated user has a pending invite |
+| GET    | `/:id`          | Get information about a specific lobby                            |
+| POST   | `/:id/invite`   | Invite a player to the lobby (host only)                          |
+| POST   | `/:id/join`     | Join a public lobby or accept a pending invite                    |
+| POST   | `/join-by-code` | Join a lobby using a unique lobby code                            |
+| POST   | `/:id/leave`    | Leave a lobby before the game starts                              |
+| POST   | `/:id/decline`  | Decline a pending lobby invitation                                |
+| POST   | `/:id/remove`   | Remove a player from the lobby (host only)                        |
+| POST   | `/:id/settings` | Update lobby settings — mode, difficulty, timer (host only)       |
+| POST   | `/:id/start`    | Start the game from the lobby (host only, min players required)   |
+
+Most lobby endpoints require authentication via
+`{ auth: { username, password } }` in the request body. The lobby creator is
+the host and has exclusive access to invite, remove, settings, and start
+actions.
+
+### `/api/stats`
+
+| Method | Route                            | Description                                           |
+| ------ | -------------------------------- | ----------------------------------------------------- |
+| GET    | `/player/:username`              | Get aggregated stats (wins, losses, win rate, badges) |
+| GET    | `/history/:username`             | Get paginated match history with optional filters     |
+| GET    | `/leaderboard`                   | Get global leaderboard ranked by win rate             |
+| POST   | `/leaderboard-opt-out`           | Toggle leaderboard opt-out for the authenticated user |
+| GET    | `/leaderboard-opt-out/:username` | Check if a player has opted out of the leaderboard    |
+
+**Query parameters for `/history/:username`:**
+
+- `page` (default: 1), `limit` (default: 10, max: 50)
+- `gameType` — filter by game type (nim/guess)
+- `opponent` — filter by opponent username
+- `dateFrom`, `dateTo` — ISO date strings for date range filtering
+
+**Query parameters for `/leaderboard`:**
+
+- `page` (default: 1), `limit` (default: 10, max: 50)
+- `period` — time filter: `week`, `month`, or `all` (default)
 
 ### Websockets
 
