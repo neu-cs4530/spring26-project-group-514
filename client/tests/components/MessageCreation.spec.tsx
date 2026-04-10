@@ -20,7 +20,7 @@ describe("MessageCreation component", () => {
     render(<MessageCreation handleMessageCreation={handleMessageCreation} />);
 
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "Comment" } });
-    fireEvent.click(screen.getByRole("button"));
+    fireEvent.click(screen.getByRole("button", { name: /submit/i }));
     expect(handleMessageCreation).toHaveBeenCalledExactlyOnceWith("Comment");
   });
 
@@ -47,4 +47,12 @@ describe("MessageCreation component", () => {
       shiftKey: true,
     });
   });
+});
+
+//emojis!
+it("appends a selected emoji to the message text", () => {
+  render(<MessageCreation handleMessageCreation={handleMessageCreation} />);
+  fireEvent.click(screen.getByRole("button", { name: /open emoji picker/i }));
+  fireEvent.click(screen.getByRole("button", { name: "😂" }));
+  expect(screen.getByDisplayValue("😂")).not.toBeNull();
 });

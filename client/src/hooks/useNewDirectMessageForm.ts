@@ -1,16 +1,11 @@
 import { type ChangeEvent, type KeyboardEvent, type SubmitEvent, useState } from "react";
 
-/**
- * Custom hook to manage the state and submission of a new direct message form.
- * Mirrors the pattern of useNewCommentForm.
- * @param handleMessageCreation - callback from useSocketsForDM to send the message
- * @returns form state and handlers
- */
 export default function useNewDirectMessageForm(handleMessageCreation: (text: string) => void): {
   text: string;
   handleSubmit: (e: SubmitEvent<HTMLFormElement>) => void;
   handleInputChange: (e: ChangeEvent<HTMLTextAreaElement>) => void;
   handleKeyDown: (e: KeyboardEvent<HTMLTextAreaElement>) => void;
+  appendEmoji: (emoji: string) => void;
 } {
   const [text, setText] = useState("");
 
@@ -36,5 +31,9 @@ export default function useNewDirectMessageForm(handleMessageCreation: (text: st
     }
   }
 
-  return { text, handleSubmit, handleInputChange, handleKeyDown };
+  function appendEmoji(emoji: string) {
+    setText((prev) => prev + emoji);
+  }
+
+  return { text, handleSubmit, handleInputChange, handleKeyDown, appendEmoji };
 }

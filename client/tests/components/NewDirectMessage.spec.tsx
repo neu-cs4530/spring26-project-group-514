@@ -46,3 +46,11 @@ describe("NewDirectMessage component", () => {
     expect(handleMessageCreation).not.toHaveBeenCalled();
   });
 });
+
+//emojis!
+it("appends a selected emoji to the message text", () => {
+  render(<NewDirectMessage handleMessageCreation={handleMessageCreation} />);
+  fireEvent.click(screen.getByRole("button", { name: /open emoji picker/i }));
+  fireEvent.click(screen.getByRole("button", { name: "😂" }));
+  expect(screen.getByDisplayValue("😂")).not.toBeNull();
+});
