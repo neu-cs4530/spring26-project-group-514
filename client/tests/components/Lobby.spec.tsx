@@ -114,7 +114,8 @@ describe("Lobby page", () => {
     render(<Lobby />);
 
     fireEvent.change(screen.getByLabelText("Invite username"), { target: { value: "friend2" } });
-    fireEvent.click(screen.getByText("Invite"));
+    const inviteRow = screen.getByLabelText("Invite username").closest(".invite-row")!;
+    fireEvent.click(inviteRow.querySelector("button")!);
 
     expect(socketActions.invitePlayer).toHaveBeenCalledExactlyOnceWith("friend2");
   });

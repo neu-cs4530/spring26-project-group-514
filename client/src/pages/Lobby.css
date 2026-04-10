@@ -1,0 +1,122 @@
+.lobby-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  height: var(--content-vh);
+  overflow: hidden;
+}
+
+.lobby-layout .lobby-main {
+  overflow-y: auto;
+}
+
+.lobby-layout .lobby-chat {
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 1rem;
+  overflow: hidden;
+}
+
+.lobby-layout .lobby-chat h2 {
+  margin-bottom: 0.5rem;
+}
+
+.lobby-layout .lobby-chat .chatContainer {
+  height: 0;
+  flex: 1;
+}
+
+.lobby-page .danger {
+  background-color: #dc3545;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+
+.lobby-page .danger:hover {
+  background-color: #b02a37;
+}
+
+.lobby-page .lobby-meta {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.875rem;
+  color: var(--gray-foreground);
+}
+
+.lobby-page .list > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.lobby-page .settings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.lobby-page .settings-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.lobby-page .settings-grid select,
+.lobby-page .settings-grid input[type="number"] {
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--gray-foreground);
+  min-height: 2.5rem;
+}
+
+.lobby-page .settings-grid .checkbox-label {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.lobby-page .preset-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.lobby-page .preset-row label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.lobby-page .preset-row select,
+.lobby-page .preset-row input {
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--gray-foreground);
+  min-height: 2.5rem;
+}
+
+.lobby-page .invite-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.lobby-page .invite-row input {
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--gray-foreground);
+  min-height: 2.5rem;
+}
+
+.lobby-page .actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
