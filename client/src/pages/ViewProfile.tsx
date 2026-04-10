@@ -10,6 +10,8 @@ import "./ViewProfile.css";
 import { BlockedIcon, CheckIcon, CrossIcon } from "../components/Icons";
 import useAuth from "../hooks/useAuth.ts";
 import { getMatchHistory, getPlayerStats } from "../services/statsService.ts";
+import useActionError from "../hooks/useActionError.ts";
+import ActionErrorBanner from "../components/ActionErrorBanner.tsx";
 
 interface ViewProfileProps {
   username: string;
@@ -21,7 +23,7 @@ export default function ViewProfile({ username }: ViewProfileProps) {
     { type: "waiting" } | { type: "error"; msg: string } | { type: "profile"; user: SafeUserInfo }
   >({ type: "waiting" });
   const [showBlockConfirm, setShowBlockConfirm] = useState(false);
-  const [actionError, setActionError] = useState<string | null>(null);
+  const { actionError, setActionError } = useActionError();
   const [playerStats, setPlayerStats] = useState<PlayerStats | null>(null);
   const [myStats, setMyStats] = useState<PlayerStats | null>(null);
   const [recentHistory, setRecentHistory] = useState<MatchHistoryEntry[]>([]);
@@ -49,12 +51,6 @@ export default function ViewProfile({ username }: ViewProfileProps) {
       : incomingRequest
         ? "incoming"
         : "idle";
-
-  useEffect(() => {
-    if (!actionError) return;
-    const timer = setTimeout(() => setActionError(null), 4000);
-    return () => clearTimeout(timer);
-  }, [actionError]);
 
   useEffect(() => {
     let cancel = false;
@@ -219,7 +215,7 @@ export default function ViewProfile({ username }: ViewProfileProps) {
               onCancel={() => setShowBlockConfirm(false)}
             />
           )}
-          {actionError && <div className="action-error-banner">{actionError}</div>}
+          {actionError && <ActionErrorBanner error={actionError} />}
           <div className="profile-actions">
             {renderFriendAction()}
             <button

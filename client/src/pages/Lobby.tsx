@@ -291,7 +291,7 @@ export default function Lobby() {
         )}
         {isHost && (
           <>
-            <ActionErrorBanner error={lobbyError} />
+            {lobbyError && <ActionErrorBanner error={lobbyError} />}
             <button className="primary narrow" onClick={startLobby}>
               Start Game
             </button>
