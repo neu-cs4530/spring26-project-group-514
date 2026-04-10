@@ -126,7 +126,9 @@ export async function createAndLoadGame(
 }
 
 /**
- * Create two fresh random users and log them both in.
+ * Log in the fixed seeded user3 on page2 while creating a fresh random user
+ * on page1 in parallel. Using one new account instead of two cuts beforeEach
+ * time roughly in half compared to the double-signup approach.
  * Both pages will be on "/" after this returns.
  */
 export async function createTwoUsers(
@@ -135,54 +137,50 @@ export async function createTwoUsers(
 ): Promise<{ username1: string; password1: string; username2: string; password2: string }> {
   const username1 = "user" + Math.floor(Math.random() * 2_000_000);
   const password1 = "pwd_for_" + username1;
-  const username2 = "user" + Math.floor(Math.random() * 2_000_000);
-  const password2 = "pwd_for_" + username2;
+  const username2 = "user3";
+  const password2 = "pwd3333";
 
-  await page1.goto("/login");
-  await page1.getByRole("button", { name: "Create New Account" }).click();
-  await page1.getByLabel("Username").fill(username1);
-  await page1.getByLabel("Password", { exact: true }).fill(password1);
-  await page1.getByLabel("Confirm Password").fill(password1);
-  await page1.getByRole("button", { name: "Sign Up" }).click();
-  await page1.waitForURL("/");
-
-  await page2.goto("/login");
-  await page2.getByRole("button", { name: "Create New Account" }).click();
-  await page2.getByLabel("Username").fill(username2);
-  await page2.getByLabel("Password", { exact: true }).fill(password2);
-  await page2.getByLabel("Confirm Password").fill(password2);
-  await page2.getByRole("button", { name: "Sign Up" }).click();
-  await page2.waitForURL("/");
+  await Promise.all([
+    (async () => {
+      await page1.goto("/login");
+      await page1.getByRole("button", { name: "Create New Account" }).click();
+      await page1.getByLabel("Username").fill(username1);
+      await page1.getByLabel("Password", { exact: true }).fill(password1);
+      await page1.getByLabel("Confirm Password").fill(password1);
+      await page1.getByRole("button", { name: "Sign Up" }).click();
+      await page1.waitForURL("/");
+    })(),
+    logInUser(page2, username2, password2),
+  ]);
 
   return { username1, password1, username2, password2 };
 }
 
 /**
- * Create two fresh random users and establish a friendship between them via the UI.
- * page1 (user1) sends the request; page2 (user2) accepts.
- * Both pages will be on "/friends" after this returns.
+ * Create one fresh user and log in user3, then establish a friendship between
+ * them via the API rather than the UI to keep beforeEach setup fast.
+ * Both pages will be on "/" after this returns.
  */
 export async function makeFriends(
   page1: Page,
   page2: Page,
 ): Promise<{ username1: string; password1: string; username2: string; password2: string }> {
   const creds = await createTwoUsers(page1, page2);
-  const { username1, username2 } = creds;
+  const { username1, password1, username2, password2 } = creds;
 
-  await page1.goto("/friends");
-  await page1.getByPlaceholder("Enter username...").fill(username2);
-  await page1.getByRole("button", { name: "Send Request" }).click();
-  await expect(page1.getByText("Request sent!")).toBeVisible();
-
-  await page2.goto("/friends");
-  await expect(page2.getByRole("listitem").filter({ hasText: username1 })).toBeVisible();
-  await page2
-    .getByRole("listitem")
-    .filter({ hasText: username1 })
-    .getByRole("button")
-    .first()
-    .click();
-  await expect(page2.getByText("No incoming requests.")).toBeVisible();
+  const reqRes = await page1.request.post("/api/friend/request", {
+    data: {
+      auth: { username: username1, password: password1 },
+      payload: { toUsername: username2 },
+    },
+  });
+  const req = (await reqRes.json()) as { id: string };
+  await page2.request.post("/api/friend/respond", {
+    data: {
+      auth: { username: username2, password: password2 },
+      payload: { requestId: req.id, action: "accepted" },
+    },
+  });
 
   return creds;
 }
