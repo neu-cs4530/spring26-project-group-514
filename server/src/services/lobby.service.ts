@@ -155,7 +155,11 @@ export async function invitePlayer(
 /**
  * Join a lobby by lobby ID (accepting an invite) or by code.
  */
-export async function joinLobby(lobbyId: string, user: UserWithId): Promise<LobbyInfo> {
+export async function joinLobby(
+  lobbyId: string,
+  user: UserWithId,
+  byCode = false,
+): Promise<LobbyInfo> {
   const lobby = await LobbyRepo.find(lobbyId);
   if (!lobby) throw new Error(`Lobby ${lobbyId} not found`);
   ensureLobbyNotStarted(lobby.startedGameId);
@@ -165,8 +169,9 @@ export async function joinLobby(lobbyId: string, user: UserWithId): Promise<Lobb
     // Already invited — update status to joined
     playerEntry.status = "joined";
   } else {
-    // Joining a public lobby directly
-    if (lobby.isPrivate) throw new Error(`Cannot join a private lobby without an invite`);
+    // Joining a public lobby directly, or a private lobby via code
+    if (lobby.isPrivate && !byCode)
+      throw new Error(`Cannot join a private lobby without an invite`);
     lobby.players = [...lobby.players, { userId: user.userId, status: "joined" }];
   }
 
@@ -181,7 +186,7 @@ export async function joinLobbyByCode(code: string, user: UserWithId): Promise<L
   const keys = await LobbyRepo.getAllKeys();
   for (const key of keys) {
     const lobby = await LobbyRepo.get(key);
-    if (lobby.code === code) return joinLobby(key, user);
+    if (lobby.code === code) return joinLobby(key, user, true);
   }
   throw new Error(`No lobby found with code ${code}`);
 }
