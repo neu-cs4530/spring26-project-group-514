@@ -11,6 +11,16 @@ import {
 } from "../../src/services/game.service.ts";
 import { getUserByUsername } from "../../src/services/auth.service.ts";
 import { GameHistoryRepo } from "../../src/repository.ts";
+import { getPlayerStats } from "../../src/services/stats.service.ts";
+
+async function expectedLeaderboardScores(usernames: string[]) {
+  return Promise.all(
+    usernames.map(async (username, playerIndex) => {
+      const stats = await getPlayerStats(username);
+      return { playerIndex, score: stats?.wins ?? 0 };
+    }),
+  );
+}
 
 describe("getGameScores", () => {
   it("returns current scores for an active guess game", async () => {
@@ -20,15 +30,10 @@ describe("getGameScores", () => {
     expect(activeGuess).toBeTruthy();
 
     const payload = await getGameScores(activeGuess!.gameId);
-    expect(payload).toStrictEqual({
-      gameId: activeGuess!.gameId,
-      scores: [
-        { playerIndex: 0, score: 0 },
-        { playerIndex: 1, score: 1 },
-        { playerIndex: 2, score: 1 },
-        { playerIndex: 3, score: 0 },
-      ],
-    });
+    expect(payload.gameId).toBe(activeGuess!.gameId);
+    expect(payload.scores).toStrictEqual(
+      await expectedLeaderboardScores(activeGuess!.players.map((player) => player.username)),
+    );
   });
 
   it("updates scores after a move", async () => {
@@ -43,12 +48,11 @@ describe("getGameScores", () => {
     await updateGame(activeGuess!.gameId, player!, 43);
 
     const payload = await getGameScores(activeGuess!.gameId);
-    expect(payload.scores).toStrictEqual([
-      { playerIndex: 0, score: 1 },
-      { playerIndex: 1, score: 1 },
-      { playerIndex: 2, score: 1 },
-      { playerIndex: 3, score: 0 },
-    ]);
+    expect(payload.scores).toStrictEqual(
+      await expectedLeaderboardScores(
+        activeGuess!.players.map((gamePlayer) => gamePlayer.username),
+      ),
+    );
   });
 
   it("returns winner scoring for a completed nim game", async () => {
@@ -58,10 +62,9 @@ describe("getGameScores", () => {
     expect(doneNim).toBeTruthy();
 
     const payload = await getGameScores(doneNim!.gameId);
-    expect(payload.scores).toStrictEqual([
-      { playerIndex: 0, score: 0 },
-      { playerIndex: 1, score: 1 },
-    ]);
+    expect(payload.scores).toStrictEqual(
+      await expectedLeaderboardScores(doneNim!.players.map((player) => player.username)),
+    );
   });
 });
 

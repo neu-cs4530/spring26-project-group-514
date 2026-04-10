@@ -14,7 +14,7 @@ import { type GameServicer } from "../games/gameServiceManager.ts";
 import { nimGameService } from "../games/nim.ts";
 import { guessGameService } from "../games/guess.ts";
 import { type GameViewUpdates, type UserWithId } from "../types.ts";
-import { GameHistoryRepo, GameRepo } from "../repository.ts";
+import { GameHistoryRepo, GameRepo, PlayerStatsRepo } from "../repository.ts";
 import { updatePlayerStatsOnGameEnd } from "./stats.service.ts";
 
 /**
@@ -26,39 +26,24 @@ export const gameServices: { [key in GameKey]: GameServicer } = {
 };
 
 /**
- * Derive current scores from the active game state.
+ * Derive current leaderboard scores for all players in a game.
  *
- * Score semantics are game-specific:
- * - `guess`: number of submitted guesses (0 or 1 for each player)
- * - `nim`: 1 for winner and 0 for others once complete; otherwise all 0
+ * The score shown in the game panel is the player's total win count so far,
+ * not the current round's move/result state.
  */
-function deriveScores(type: GameKey, state: unknown, numPlayers: number): GamePlayerScore[] {
-  const defaultScores = Array.from({ length: numPlayers }, (_, playerIndex) => ({
-    playerIndex,
-    score: 0,
-  }));
+async function deriveScores(gameId: string): Promise<GamePlayerScore[]> {
+  const game = await GameRepo.find(gameId);
+  if (!game) throw new Error(`scores requested for invalid game ${gameId}`);
 
-  if (!state) return defaultScores;
-
-  if (type === "guess") {
-    const guessState = state as GuessState;
-    return guessState.guesses.map((guess, playerIndex) => ({
-      playerIndex,
-      score: guess === null ? 0 : 1,
-    }));
-  }
-
-  if (type === "nim") {
-    const nimState = state as NimState;
-    if (nimState.remaining > 0) return defaultScores;
-
-    return defaultScores.map((entry) => ({
-      ...entry,
-      score: entry.playerIndex === nimState.nextPlayer ? 1 : 0,
-    }));
-  }
-
-  return defaultScores;
+  return Promise.all(
+    game.players.map(async (userId, playerIndex) => {
+      const stats = await PlayerStatsRepo.find(userId);
+      return {
+        playerIndex,
+        score: stats?.wins ?? 0,
+      };
+    }),
+  );
 }
 
 /**
@@ -209,12 +194,9 @@ export async function getGames(): Promise<GameInfo[]> {
  * @throws if the game id is not valid
  */
 export async function getGameScores(gameId: string): Promise<GameScoresPayload> {
-  const game = await GameRepo.find(gameId);
-  if (!game) throw new Error(`scores requested for invalid game ${gameId}`);
-
   return {
     gameId,
-    scores: deriveScores(game.type, game.state, game.players.length),
+    scores: await deriveScores(gameId),
   };
 }
 
