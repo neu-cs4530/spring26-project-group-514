@@ -1,5 +1,5 @@
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
-//import { makeFriends } from "./testUtils.ts";
+import { makeFriends } from "./testUtils.ts";
 
 let userContext1: BrowserContext;
 let userContext2: BrowserContext;
@@ -20,15 +20,13 @@ test.afterEach(async () => {
 
 test.describe("Direct Messages", () => {
   // Both username1 and username2 are fresh random users: display name = username
-  //let username1: string;
-  //let username2: string;
+  //deleted the declaration of usn1 and usn2 since they aren't actually used.
 
-  /*test.beforeEach(async () => {
+  test.beforeEach(async () => {
     // makeFriends ends with both pages on /friends — the DM now exists in the DB
-    const friends = await makeFriends(page1, page2);
-    username1 = friends.username1;
-    username2 = friends.username2;
-  });*/ // IGNORE —
+    await makeFriends(page1, page2);
+    // friend, usn1, and usn2 assignment since, but makefriend call still needed.
+  });
 
   test("should create a DM conversation after becoming friends", async () => {
     // Navigate to Messages via nav link to preserve auth state (CoS 1.4)
