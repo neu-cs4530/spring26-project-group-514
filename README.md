@@ -140,7 +140,7 @@ the request to authenticate themselves
 - `sendFriendRequest` and DM messaging should check the block list and reject
   if either user has blocked the other.
 
-### `/api/lobby`
+#### `/api/lobby`
 
 | Method | Route           | Description                                                       |
 | ------ | --------------- | ----------------------------------------------------------------- |
@@ -162,7 +162,7 @@ Most lobby endpoints require authentication via
 the host and has exclusive access to invite, remove, settings, and start
 actions.
 
-### `/api/stats`
+#### `/api/stats`
 
 | Method | Route                            | Description                                           |
 | ------ | -------------------------------- | ----------------------------------------------------- |
@@ -191,73 +191,146 @@ server is detailed in `shared/src/socket.types.ts`.
 
 ## Data Architecture
 
-This web application stores information about users, forum posts, and games.
-The structure of the data can be described by this diagram:
+This web application stores information about users, forum posts, games,
+lobbies, friends, direct messages, and player stats. The structure of the data
+can be described by this diagram:
 
 ```mermaid
 erDiagram
     Auth {
         string username "unique key"
-        userId userId "unique"
+        RecordId userId "unique"
         string password ""
     }
 
     User {
-        userId userId "generated key"
-        username username "unique"
+        RecordId userId "generated key"
+        string username "unique"
         string display ""
-        Date createdAt ""
+        DateISO createdAt ""
+        Record friends "userId set"
+        Record friendInReqs "userId to requestId"
+        Record friendOutReqs "userId to requestId"
+        Record directChats "userId to chatId"
+        Record blocked "userId set"
     }
-    User ||--|| Auth: "User.username"
-    Auth ||--|| User: "Auth.userId"
+    User ||--|| Auth: "Auth.userId"
 
     Thread {
-        threadId threadId "generated key"
+        RecordId threadId "generated key"
         string title ""
         string text ""
-        Date createdAt ""
-        userId createdBy ""
-        commentId[] comments ""
+        DateISO createdAt ""
+        RecordId createdBy ""
+        RecordId[] comments ""
     }
-    Thread ||--|| User: "Thread.createdBy"
+    Thread }o--|| User: "Thread.createdBy"
     Thread ||--o{ Comment: "Thread.comments"
 
     Comment {
-        commentId commentId "generated key"
+        RecordId commentId "generated key"
         string text ""
-        userId createdBy ""
-        Date createdAt ""
-        Date editedAt "can be null"
+        RecordId createdBy ""
+        DateISO createdAt ""
+        DateISO editedAt "optional"
     }
-    Comment ||--|| User: "Comment.createdBy"
+    Comment }o--|| User: "Comment.createdBy"
 
     Game {
-        gameId gameId "generated key"
-        GameKey type ""
-        unknown state ""
+        RecordId gameId "generated key"
+        GameKey type "nim or guess"
+        unknown state "optional"
         boolean done ""
-        chatId chat ""
-        userId[] players ""
-        Date createdAt ""
-        userId createdBy ""
+        boolean isPrivate ""
+        RecordId chat ""
+        RecordId[] players ""
+        number timerDurationSeconds "optional"
+        DateISO timerEndsAt "optional"
+        DateISO createdAt ""
+        RecordId createdBy ""
     }
     Game ||--|| Chat: "Game.chat"
-    Game ||--|| User: "Game.createdBy"
-    Game ||--o{ User: "Game.players"
+    Game }o--|| User: "Game.createdBy"
+    Game }o--o{ User: "Game.players"
+
+    GameHistory {
+        RecordId gameHistoryId "generated key"
+        GameKey type "nim or guess"
+        unknown state "final state"
+        RecordId[] players ""
+        DateISO endedAt ""
+        boolean endedByTimer "optional"
+    }
+    GameHistory }o--o{ User: "GameHistory.players"
 
     Chat {
-        chatId chatId "generated key"
-        messageId[] messages ""
-        Date createdAt ""
+        RecordId chatId "generated key"
+        RecordId[] messages ""
+        MoveLogEntry[] moveLog ""
+        DateISO createdAt ""
     }
     Chat ||--o{ Message: "Chat.messages"
 
     Message {
-        messageId messageId "generated key"
+        RecordId messageId "generated key"
         string text ""
-        Date createdAt ""
+        RecordId createdBy ""
+        DateISO createdAt ""
     }
-    Message ||--|| User: "Message.createdBy"
+    Message }o--|| User: "Message.createdBy"
+
+    Lobby {
+        RecordId lobbyId "generated key"
+        GameKey type "nim or guess"
+        boolean isPrivate ""
+        string code "unique join code"
+        RecordId createdBy ""
+        LobbyPlayer[] players ""
+        LobbySettings settings ""
+        RecordId chatId ""
+        RecordId startedGameId "optional"
+        DateISO createdAt ""
+    }
+    Lobby }o--|| User: "Lobby.createdBy"
+    Lobby ||--|| Chat: "Lobby.chatId"
+    Lobby |o--o| Game: "Lobby.startedGameId"
+
+    FriendRequest {
+        RecordId id "generated key"
+        RecordId fromUser ""
+        RecordId toUser ""
+        string status "pending, accepted, or rejected"
+        DateISO createdAt ""
+        DateISO respondedAt "optional"
+    }
+    FriendRequest }o--|| User: "FriendRequest.fromUser"
+    FriendRequest }o--|| User: "FriendRequest.toUser"
+
+    DirectChat {
+        RecordId id "generated key"
+        RecordId[] participants "two user IDs"
+        RecordId[] messages ""
+        DateISO createdAt ""
+        Record lastReadAt "userId to DateISO"
+    }
+    DirectChat }o--o{ User: "DirectChat.participants"
+    DirectChat ||--o{ Message: "DirectChat.messages"
+
+    PlayerStats {
+        RecordId playerStatsId "generated key"
+        RecordId userId ""
+        string username ""
+        number wins ""
+        number losses ""
+        number gamesPlayed ""
+        number winRate "0 to 1"
+        string[] badges ""
+        number currentWinStreak ""
+        number bestWinStreak ""
+        boolean leaderboardOptOut ""
+        DateISO lastPlayedAt ""
+    }
+    PlayerStats ||--|| User: "PlayerStats.userId"
 ```
 
 ## Games
