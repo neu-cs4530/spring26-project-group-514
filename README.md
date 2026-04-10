@@ -140,32 +140,49 @@ the request to authenticate themselves
 - `sendFriendRequest` and DM messaging should check the block list and reject
   if either user has blocked the other.
 
-#### `/api/lobby`
+### `/api/lobby`
 
-| Method | Route           | Purpose                                                                             |
-| ------ | --------------- | ----------------------------------------------------------------------------------- |
-| POST   | `/create`       | Create a new lobby (`{ auth, payload: {type, isPrivate} }`)                         |
-| GET    | `/list`         | List public lobbies                                                                 |
-| POST   | `/invited`      | List pending private-lobby invites for authenticated user (`{ auth, payload: {} }`) |
-| GET    | `/:id`          | Get lobby details by lobby ID                                                       |
-| POST   | `/join-by-code` | Join a private lobby using invite code (`{ auth, payload: {code} }`)                |
-| POST   | `/:id/invite`   | Invite a user to a lobby (`{ auth, payload: {username} }`)                          |
-| POST   | `/:id/join`     | Join a lobby (`{ auth, payload: {} }`)                                              |
-| POST   | `/:id/leave`    | Leave a lobby (`{ auth, payload: {} }`)                                             |
-| POST   | `/:id/decline`  | Decline a lobby invite (`{ auth, payload: {} }`)                                    |
-| POST   | `/:id/remove`   | Remove a player from a lobby (`{ auth, payload: {username} }`)                      |
-| POST   | `/:id/settings` | Update lobby settings (`{ auth, payload: {mode, difficulty, timerSeconds} }`)       |
-| POST   | `/:id/start`    | Start a lobby and create a game (`{ auth, payload: {} }`)                           |
+| Method | Route           | Description                                                       |
+| ------ | --------------- | ----------------------------------------------------------------- |
+| POST   | `/create`       | Create a new lobby (public/private toggle, game type, settings)   |
+| GET    | `/list`         | List all public lobbies that haven't started yet                  |
+| POST   | `/invited`      | Get all lobbies where the authenticated user has a pending invite |
+| GET    | `/:id`          | Get information about a specific lobby                            |
+| POST   | `/:id/invite`   | Invite a player to the lobby (host only)                          |
+| POST   | `/:id/join`     | Join a public lobby or accept a pending invite                    |
+| POST   | `/join-by-code` | Join a lobby using a unique lobby code                            |
+| POST   | `/:id/leave`    | Leave a lobby before the game starts                              |
+| POST   | `/:id/decline`  | Decline a pending lobby invitation                                |
+| POST   | `/:id/remove`   | Remove a player from the lobby (host only)                        |
+| POST   | `/:id/settings` | Update lobby settings — mode, difficulty, timer (host only)       |
+| POST   | `/:id/start`    | Start the game from the lobby (host only, min players required)   |
 
-#### `/api/stats`
+Most lobby endpoints require authentication via
+`{ auth: { username, password } }` in the request body. The lobby creator is
+the host and has exclusive access to invite, remove, settings, and start
+actions.
 
-| Method | Route                            | Purpose                                                                        |
-| ------ | -------------------------------- | ------------------------------------------------------------------------------ |
-| GET    | `/player/:username`              | Get aggregate player stats                                                     |
-| GET    | `/history/:username`             | Get paginated match history (supports `page`, `limit`, and filters)            |
-| GET    | `/leaderboard`                   | Get paginated leaderboard (`period=week/month/all`, plus `page/limit`)         |
-| POST   | `/leaderboard-opt-out`           | Set leaderboard opt-out for authenticated user (`{ auth, payload: {optOut} }`) |
-| GET    | `/leaderboard-opt-out/:username` | Get a user's leaderboard opt-out status                                        |
+### `/api/stats`
+
+| Method | Route                            | Description                                           |
+| ------ | -------------------------------- | ----------------------------------------------------- |
+| GET    | `/player/:username`              | Get aggregated stats (wins, losses, win rate, badges) |
+| GET    | `/history/:username`             | Get paginated match history with optional filters     |
+| GET    | `/leaderboard`                   | Get global leaderboard ranked by win rate             |
+| POST   | `/leaderboard-opt-out`           | Toggle leaderboard opt-out for the authenticated user |
+| GET    | `/leaderboard-opt-out/:username` | Check if a player has opted out of the leaderboard    |
+
+**Query parameters for `/history/:username`:**
+
+- `page` (default: 1), `limit` (default: 10, max: 50)
+- `gameType` — filter by game type (nim/guess)
+- `opponent` — filter by opponent username
+- `dateFrom`, `dateTo` — ISO date strings for date range filtering
+
+**Query parameters for `/leaderboard`:**
+
+- `page` (default: 1), `limit` (default: 10, max: 50)
+- `period` — time filter: `week`, `month`, or `all` (default)
 
 ### Websockets
 
