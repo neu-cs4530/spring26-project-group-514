@@ -104,7 +104,7 @@ export default function Friends() {
         ) : blockedUsers.length === 0 ? (
           <div>No blocked users.</div>
         ) : (
-          <div className="dottedList" role="list">
+          <div className="list" role="list">
             {blockedUsers.map((user) => (
               <div key={user.username} role="listitem">
                 <UserLink user={user} />
