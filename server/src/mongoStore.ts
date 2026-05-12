@@ -22,7 +22,10 @@ export class SharedMongoStore extends EventEmitter {
 
   private async ensureIndexes(): Promise<void> {
     await this.collection.createIndex({ key: 1 }, { unique: true, background: true });
-    await this.collection.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0, background: true });
+    await this.collection.createIndex(
+      { expiresAt: 1 },
+      { expireAfterSeconds: 0, background: true },
+    );
   }
 
   async get(key: string): Promise<unknown> {
